@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
 
     steps:
       - name: Checkout
@@ -32,3 +32,18 @@ jobs:
 
       - name: Typecheck and production build
         run: npm run build
+
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser smoke tests
+        run: npm run test:e2e
+
+      - name: Upload browser failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-debug
+          path: test-results/
+          retention-days: 5
+          if-no-files-found: ignore

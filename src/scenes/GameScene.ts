@@ -152,6 +152,16 @@ export class GameScene extends Phaser.Scene {
     this.refreshHud(now);
   }
 
+  /** Dev-only browser smoke hook, absent from production entry points. */
+  debugForceGameOver():void{
+    if(!import.meta.env.DEV)return;
+    this.endGame(this.clock.now);
+  }
+
+  debugUsesTouch():boolean{
+    return this.inputController?.touchMode??false;
+  }
+
   private refreshHud(now: number): void {
     if (
       !this.player || !this.combat || !this.interactions ||
