@@ -21,6 +21,9 @@ test("desktop: gameplay starts and Enter reliably restarts from game over",async
     dialog:!!document.querySelector(".gameover-overlay"),
   }));
   console.log("RESTART DIAGNOSTIC:",JSON.stringify(state),"PAGE ERRORS:",JSON.stringify(errors));
+  if(!state.game||state.over){
+    throw new Error("Restart transition: "+JSON.stringify(state)+" errors="+JSON.stringify(errors));
+  }
 
   await page.waitForFunction(()=>
     window.__zombieSmoke?.isActive("game")&&
@@ -64,6 +67,9 @@ test("mobile landscape: canvas fills viewport and touch restart/main menu work",
     dialog:!!document.querySelector(".gameover-overlay"),
   }));
   console.log("RESTART DIAGNOSTIC:",JSON.stringify(state),"PAGE ERRORS:",JSON.stringify(errors));
+  if(!state.game||state.over){
+    throw new Error("Restart transition: "+JSON.stringify(state)+" errors="+JSON.stringify(errors));
+  }
 
   await page.waitForFunction(()=>
     window.__zombieSmoke?.isActive("game")&&
