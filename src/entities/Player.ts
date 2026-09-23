@@ -8,7 +8,7 @@ const DIAGONAL_COMPONENT = 1 / Math.sqrt(2);
 export class Player extends Phaser.Physics.Arcade.Sprite {
   facing: FacingDirection = "e";
 
-  private currentHealth = PLAYER_CONFIG.maxHealth;
+  private currentHealth: number = PLAYER_CONFIG.maxHealth;
   private lastDamageAt = Number.NEGATIVE_INFINITY;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {

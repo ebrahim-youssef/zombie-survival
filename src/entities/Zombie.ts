@@ -28,6 +28,7 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, ZOMBIE_TEXTURE);
 
     this.entryTarget = entryTarget.clone();
+    this.health = maxHealth;
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -43,7 +44,7 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite {
     body.setBounce(0);
   }
 
-  private health = this.maxHealth;
+  private health: number;
 
   get isDead(): boolean {
     return this.dead;
