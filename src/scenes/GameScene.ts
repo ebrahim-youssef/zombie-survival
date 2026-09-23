@@ -7,6 +7,7 @@ import { Crosshair } from "../ui/Crosshair";
 import { HUD } from "../ui/HUD";
 import { Arena } from "../world/Arena";
 import { CameraController } from "../world/CameraController";
+import { WaveController } from "../zombies/WaveController";
 import { ZombieController } from "../zombies/ZombieController";
 
 export class GameScene extends Phaser.Scene {
@@ -17,6 +18,7 @@ export class GameScene extends Phaser.Scene {
   private hud: HUD | undefined;
   private cameraController: CameraController | undefined;
   private zombies: ZombieController | undefined;
+  private waves: WaveController | undefined;
   private combat: CombatController | undefined;
   private runState: RunState | undefined;
   private gameOver = false;
@@ -52,6 +54,11 @@ export class GameScene extends Phaser.Scene {
       this.player,
     );
 
+    this.waves = new WaveController(
+      this.arena,
+      this.zombies,
+    );
+
     this.combat = new CombatController(
       this,
       this.player,
@@ -69,7 +76,7 @@ export class GameScene extends Phaser.Scene {
     this.input.mouse?.disableContextMenu();
     this.game.canvas.style.cursor = "none";
 
-    this.refreshHud();
+    this.refreshHud(0);
 
     this.events.once(
       Phaser.Scenes.Events.SHUTDOWN,
@@ -86,6 +93,7 @@ export class GameScene extends Phaser.Scene {
       !this.crosshair ||
       !this.hud ||
       !this.zombies ||
+      !this.waves ||
       !this.combat ||
       !this.runState
     ) {
@@ -108,6 +116,8 @@ export class GameScene extends Phaser.Scene {
 
     this.player.updateSurvival(time, delta);
 
+    this.waves.update(time);
+
     const healthBeforeZombieUpdate = this.player.health;
     this.zombies.update(time);
 
@@ -116,7 +126,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.player.isDead) {
-      this.endGame();
+      this.endGame(time);
       return;
     }
 
@@ -126,11 +136,17 @@ export class GameScene extends Phaser.Scene {
       this.hud.showPointGain(award);
     }
 
-    this.refreshHud();
+    this.refreshHud(time);
   }
 
-  private refreshHud(): void {
-    if (!this.player || !this.combat || !this.hud || !this.runState) {
+  private refreshHud(now: number): void {
+    if (
+      !this.player ||
+      !this.combat ||
+      !this.hud ||
+      !this.runState ||
+      !this.waves
+    ) {
       return;
     }
 
@@ -143,13 +159,18 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateWeapon(
       this.combat.weapon.snapshot(),
     );
+
+    this.hud.updateWave(
+      this.waves.snapshot(now),
+    );
   }
 
-  private endGame(): void {
+  private endGame(now: number): void {
     if (
       this.gameOver ||
       !this.player ||
       !this.zombies ||
+      !this.waves ||
       !this.hud ||
       !this.runState
     ) {
@@ -161,8 +182,10 @@ export class GameScene extends Phaser.Scene {
     this.player.setTint(0x6b3434);
     this.zombies.stopAll();
 
+    const wave = this.waves.snapshot(now);
+
     this.hud.showGameOver(
-      1,
+      wave.round,
       this.runState.kills,
       this.runState.points,
     );
@@ -199,6 +222,7 @@ export class GameScene extends Phaser.Scene {
     this.crosshair = undefined;
     this.hud = undefined;
     this.combat = undefined;
+    this.waves = undefined;
     this.zombies = undefined;
     this.cameraController = undefined;
     this.runState = undefined;

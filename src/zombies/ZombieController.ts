@@ -1,8 +1,7 @@
 import Phaser from "phaser";
-import { getZombieHealth } from "../config/waves";
 import { Zombie } from "../entities/Zombie";
 import type { Player } from "../entities/Player";
-import type { Arena } from "../world/Arena";
+import type { Arena, ArenaWindow } from "../world/Arena";
 
 export class ZombieController {
   private readonly group: Phaser.Physics.Arcade.Group;
@@ -19,8 +18,6 @@ export class ZombieController {
       this.group,
       this.group,
     );
-
-    this.spawnTestSlice();
   }
 
   update(now: number): void {
@@ -29,6 +26,46 @@ export class ZombieController {
         child.updateBehavior(now, this.player);
       }
     }
+  }
+
+  spawn(
+    window: ArenaWindow,
+    health: number,
+    moveSpeed: number,
+  ): Zombie {
+    const inward = this.arena.center
+      .clone()
+      .subtract(window.center)
+      .normalize();
+
+    const entryTarget = window.center
+      .clone()
+      .add(inward.scale(54));
+
+    const zombie = new Zombie(
+      this.scene,
+      window.outsideSpawn.x,
+      window.outsideSpawn.y,
+      entryTarget,
+      health,
+      moveSpeed,
+    );
+
+    this.group.add(zombie);
+
+    return zombie;
+  }
+
+  getAliveCount(): number {
+    let count = 0;
+
+    for (const child of this.group.getChildren()) {
+      if (child instanceof Zombie && !child.isDead) {
+        count += 1;
+      }
+    }
+
+    return count;
   }
 
   getAliveZombies(): Zombie[] {
@@ -54,30 +91,5 @@ export class ZombieController {
   destroy(): void {
     this.selfCollider.destroy();
     this.group.clear(true, true);
-  }
-
-  private spawnTestSlice(): void {
-    const health = getZombieHealth(1);
-
-    for (const window of this.arena.windows) {
-      const inward = this.arena.center
-        .clone()
-        .subtract(window.center)
-        .normalize();
-
-      const entryTarget = window.center
-        .clone()
-        .add(inward.scale(54));
-
-      const zombie = new Zombie(
-        this.scene,
-        window.outsideSpawn.x,
-        window.outsideSpawn.y,
-        entryTarget,
-        health,
-      );
-
-      this.group.add(zombie);
-    }
   }
 }

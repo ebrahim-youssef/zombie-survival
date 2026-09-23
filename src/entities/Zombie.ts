@@ -16,13 +16,15 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite {
   private enteredRoom = false;
   private dead = false;
   private lastAttackAt = Number.NEGATIVE_INFINITY;
+  private health: number;
 
   constructor(
     scene: Phaser.Scene,
     x: number,
     y: number,
     entryTarget: Phaser.Math.Vector2,
-    private readonly maxHealth: number,
+    maxHealth: number,
+    private readonly moveSpeed: number,
   ) {
     Zombie.ensureTexture(scene);
     super(scene, x, y, ZOMBIE_TEXTURE);
@@ -43,8 +45,6 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite {
     );
     body.setBounce(0);
   }
-
-  private health: number;
 
   get isDead(): boolean {
     return this.dead;
@@ -133,8 +133,8 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite {
     );
 
     this.setVelocity(
-      Math.cos(angle) * ZOMBIE_CONFIG.baseWalkSpeed,
-      Math.sin(angle) * ZOMBIE_CONFIG.baseWalkSpeed,
+      Math.cos(angle) * this.moveSpeed,
+      Math.sin(angle) * this.moveSpeed,
     );
 
     this.setRotation(angle);

@@ -4,29 +4,31 @@ Client-only pseudo-isometric zombie survival game prototype.
 
 ## Current status
 
-**Phase 3 — zombie vertical slice**
+**Phase 4 — waves**
 
-Implemented so far:
+Implemented:
 
 - Vite 8 + TypeScript 7 strict mode.
 - Phaser 3.90 + Arcade Physics.
 - Responsive 1280×720 logical canvas.
 - Pseudo-isometric arena with four zombie windows.
-- WASD/arrow movement with deliberate 1.25× diagonal magnitude.
-- Independent mouse aiming and 8-direction visual facing.
-- Custom crosshair and camera follow foundation.
-- MR6 semi-auto weapon with hitscan, spread, tracer and reload.
-- Wall-segment ray blocking with open window gaps.
-- Four-zombie vertical-slice spawn: one zombie enters through each window.
-- Zombie direct chase after entry.
-- Zombie-to-zombie Arcade separation.
-- Zombie attack range/cooldown.
+- Player movement/aiming/crosshair/camera foundation.
+- MR6 semi-auto hitscan combat, ammo and reload.
+- Zombie window entry, pursuit, attack, death and corpse fade.
 - Player HP, damage feedback and regeneration.
-- Gun and melee damage against zombies.
-- Corpse hold + fade.
-- BO3-style +10 / +60 / +130 point awards.
-- Kill count and point-gain popup.
-- Basic game-over/restart flow.
+- Gun/melee zombie damage and BO3-style point awards.
+- Real Round 1 with 6 zombies.
+- BO3-style zombie count and health scaling.
+- Spawn scheduler with increasing round pressure.
+- Randomized window selection.
+- No more than two consecutive spawns from the same window.
+- Per-round concurrent-alive cap up to 24.
+- Round clear detection.
+- ~5-second intermission.
+- Automatic next-round start.
+- Modest round-based zombie speed scaling.
+- Live round/spawn/alive HUD.
+- Game-over screen reports the actual current round.
 - GitHub CI running strict TypeScript + production Vite build.
 
 ## Runtime
@@ -56,6 +58,6 @@ Production output: `dist/`.
 
 ## Next implementation slice
 
-**Phase 4 — waves:** BO3 round counts, spawn scheduler, randomized anti-streak windows, concurrent-alive cap, round completion/intermission, and increasing spawn pressure.
+**Phase 5 — weapons + inventory:** Kuda, KN-44, KRM-262, BRM, Drakon, two weapon slots, switching and shotgun pellet behavior.
 
 See `docs/08-implementation-plan.md`.

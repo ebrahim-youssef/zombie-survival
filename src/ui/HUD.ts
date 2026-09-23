@@ -1,9 +1,12 @@
 import Phaser from "phaser";
 import type { RunState } from "../game/RunState";
 import type { WeaponSnapshot } from "../weapons/WeaponController";
+import type { WaveSnapshot } from "../zombies/WaveController";
 
 export class HUD {
   private readonly scene: Phaser.Scene;
+  private readonly roundText: Phaser.GameObjects.Text;
+  private readonly waveStateText: Phaser.GameObjects.Text;
   private readonly healthPointsText: Phaser.GameObjects.Text;
   private readonly ammoText: Phaser.GameObjects.Text;
   private readonly phaseText: Phaser.GameObjects.Text;
@@ -13,11 +16,20 @@ export class HUD {
 
     const camera = scene.cameras.main;
 
-    scene.add
+    this.roundText = scene.add
       .text(24, 22, "ROUND 1", {
         fontFamily: "monospace",
         fontSize: "20px",
         color: "#ede8dc",
+      })
+      .setScrollFactor(0)
+      .setDepth(2000);
+
+    this.waveStateText = scene.add
+      .text(24, 51, "", {
+        fontFamily: "monospace",
+        fontSize: "13px",
+        color: "#b8ac86",
       })
       .setScrollFactor(0)
       .setDepth(2000);
@@ -42,7 +54,7 @@ export class HUD {
       .setDepth(2000);
 
     this.phaseText = scene.add
-      .text(camera.width / 2, 22, "PHASE 3 • ZOMBIE SLICE", {
+      .text(camera.width / 2, 22, "PHASE 4 • WAVES", {
         fontFamily: "monospace",
         fontSize: "14px",
         color: "#b8ac86",
@@ -59,6 +71,22 @@ export class HUD {
   ): void {
     this.healthPointsText.setText(
       `HP ${Math.ceil(health)} / ${maxHealth}   •   ${runState.points} PTS   •   ${runState.kills} KILLS`,
+    );
+  }
+
+  updateWave(snapshot: WaveSnapshot): void {
+    this.roundText.setText(`ROUND ${snapshot.round}`);
+
+    if (snapshot.phase === "intermission") {
+      const seconds = Math.ceil(snapshot.nextRoundInMs / 1000);
+      this.waveStateText.setText(
+        `ROUND CLEAR • NEXT ROUND IN ${seconds}s`,
+      );
+      return;
+    }
+
+    this.waveStateText.setText(
+      `SPAWNED ${snapshot.spawnedZombies}/${snapshot.totalZombies} • ALIVE ${snapshot.aliveZombies}/${snapshot.maxAliveZombies}`,
     );
   }
 
@@ -129,6 +157,8 @@ export class HUD {
   }
 
   destroy(): void {
+    this.roundText.destroy();
+    this.waveStateText.destroy();
     this.healthPointsText.destroy();
     this.ammoText.destroy();
     this.phaseText.destroy();

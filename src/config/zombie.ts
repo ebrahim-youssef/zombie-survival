@@ -1,6 +1,5 @@
 export const ZOMBIE_CONFIG = {
   colliderRadius: 11,
-  baseWalkSpeed: 82,
   attackRange: 38,
   attackDamage: 50,
   attackCooldownMs: 1000,

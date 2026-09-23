@@ -8,57 +8,37 @@ Status: **complete**
 
 Status: **complete**
 
-- pseudo-isometric arena;
-- four windows;
-- player movement;
-- 1.25× diagonal magnitude;
-- independent aim;
-- 8-direction facing;
-- crosshair;
-- camera foundation.
-
 ## Phase 2 — Combat foundation
 
 Status: **complete**
-
-- MR6.
-- semi-auto cadence.
-- hitscan.
-- wall/window ray geometry.
-- muzzle flash/tracer.
-- ammo/reload.
-- melee cone foundation.
 
 ## Phase 3 — Zombie vertical slice
 
 Status: **complete**
 
-- standard zombie entity.
-- one test zombie per window.
-- window entry.
-- direct pursuit.
-- zombie separation.
-- attack range/cooldown.
-- player damage/regen.
-- gun + melee zombie hit resolution.
-- BO3-style scoring.
-- zombie death/corpse fade.
-- basic game over/restart.
-
 ## Phase 4 — Waves
 
-Status: **next**
+Status: **complete**
 
-- BO3 health/count functions.
-- spawn scheduler.
-- randomized anti-streak window selection.
-- active-zombie cap.
-- round completion.
-- ~5-second intermission.
+- BO3-style zombie health/count functions.
+- real Round 1 count.
+- timed spawn scheduler.
+- randomized window selection.
+- maximum two consecutive spawns from one window.
+- per-round active-zombie cap up to 24.
 - increasing spawn pressure.
-- round HUD becomes live rather than fixed.
+- modest zombie-speed scaling.
+- round-clear detection.
+- ~5-second intermission.
+- automatic next round.
+- live round/spawn/alive HUD.
+- game over reports actual round.
+
+Spawn interval and movement-speed scaling are explicit 2D adaptations, not claimed as exact BO3 engine timings.
 
 ## Phase 5 — Weapons + inventory
+
+Status: **next**
 
 - Kuda.
 - KN-44.
