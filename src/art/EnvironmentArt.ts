@@ -173,6 +173,23 @@ export function ensureEnvironmentArt(scene: Phaser.Scene): void {
     rect(g, 0x362d2b, 19, 20, 12, 3);
   });
 
+  render(g, ENV_TEXTURES.paper, 32, 28, () => {
+    g.fillStyle(0x2a221e, .37);
+    g.fillRect(5, 4, 25, 22);
+    g.fillStyle(0xdfc8a4, 1);
+    g.fillPoints([
+      new Phaser.Math.Vector2(5, 3),
+      new Phaser.Math.Vector2(26, 2),
+      new Phaser.Math.Vector2(29, 23),
+      new Phaser.Math.Vector2(6, 25),
+    ], true);
+    g.lineStyle(1, 0xb49d7f, .9);
+    g.lineBetween(9, 8, 23, 7);
+    g.lineBetween(10, 12, 25, 11);
+    g.lineBetween(9, 17, 21, 16);
+    g.lineBetween(11, 21, 20, 20);
+  });
+
   render(g, ENV_TEXTURES.sign, 70, 84, () => {
     rect(g, 0x392a23, 2, 3, 66, 77);
     rect(g, 0xd1bd98, 5, 6, 60, 71);

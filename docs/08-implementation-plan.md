@@ -72,7 +72,7 @@ Implemented:
 - optional auto-aim + FIRE and fully manual mobile modes persisted in settings;
 - reliable DOM Pointer Events + pointer capture for simultaneous touch controls;
 - right-stick release clears firing state;
-- 48×64 original full-body angled player/zombie character frames;
+- 32×32 native chunky player/zombie frames at 3× nearest-neighbour scale;
 - eight directional visual facings without rotating a top-down block;
 - player idle/walk/shoot/melee/reload/hurt presentation states;
 - zombie walk/attack/hurt/death presentation states;
@@ -94,3 +94,23 @@ Still pending:
 - visual review/tuning of the generated character frames on real devices;
 - artist-authored final sprite sheets if the procedural preview is not accepted;
 - final performance profiling and complete MVP acceptance checklist.
+
+## Phase 9C — reference-aligned arcade cabin visual refinement
+
+- Source character sprites remain native 32 × 32 and are displayed at an
+  integer 3× scale for readable silhouettes in the responsive viewport.
+- The world collision map and all four corresponding window gaps now use a
+  projected cutaway trapezoid: straight rear wall, angled side walls and
+  a low foreground ledge. Zombie entry targets and wall-ray segments stay
+  linked to the new geometry.
+- Side windows sit closer to the rear wall, with matching ray openings.
+- Chest moved near the back-right furniture; warm lantern pools are tighter
+  and brighter. More crates and scattered papers improve cabin occupancy.
+- Gunshot visual muzzle flashes originate at the visible character rifle,
+  while hitscan logic remains feet-centred to preserve hit registration.
+- Automated Chromium capture publishes the current gameplay render as
+  `cabin-art-preview` in GitHub Actions on every successful CI run.
+
+These are original editable runtime-generated textures, not PNG files
+extracted from the reference. The approved image remains an art direction
+target, not a claim of pixel-perfect duplication.

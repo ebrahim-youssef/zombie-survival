@@ -19,7 +19,7 @@ describe("eight-way sprite directions",()=>{
 describe("32 × 32 arcade sprite contract",()=>{
   it("keeps native frames 32 × 32 and renders them at a crisp 2×",()=>{
     expect([CHARACTER_W,CHARACTER_H,CHARACTER_SCALE,CHARACTER_FEET_Y])
-      .toEqual([32,32,2,28]);
+      .toEqual([32,32,3,28]);
   });
   it("keeps all eight direction and action frame names distinct",()=>{
     expect(characterFrameCount("player","walk")).toBe(4);

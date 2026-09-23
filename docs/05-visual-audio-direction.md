@@ -99,7 +99,7 @@ Core SFX:
 
 Use original/generated/permissively licensed audio only.
 
-## Implemented angled full-body procedural sprite pass
+## Superseded first angled sprite prototype (48×64)
 
 - Characters use distinct front, three-quarter, side and back sprites.
 - Full-body 48×64 silhouettes with oversized helmets/heads, jacket/torso,
@@ -122,7 +122,7 @@ contrast pixel portrait/hearts/score/round/ammo HUD.
 
 Implementation:
 - All character source frames are **exactly 32 × 32** and display at
-  2× nearest-neighbour scale; no 48 × 64 source sprites remain.
+  3× nearest-neighbour scale; no 48 × 64 source sprites remain.
 - Original eight-facing survivor (helmet, tan face, dark rifle, olive
   outfit) and cartoon green-faced zombies (large head, white torn
   shirt, blue trousers, glowing eyes and dark-red mouths).

@@ -7,7 +7,7 @@ import { ENV_TEXTURES, CABIN_PALETTE, HUD_TEXTURES } from "../src/art/ArtManifes
 
 describe("original arcade art contracts",()=>{
   it("uses chunky native 32x32 character frames with 2x nearest-neighbour display",()=>{
-    expect([CHARACTER_W,CHARACTER_H,CHARACTER_SCALE]).toEqual([32,32,2]);
+    expect([CHARACTER_W,CHARACTER_H,CHARACTER_SCALE]).toEqual([32,32,3]);
     expect(characterFrameCount("player","walk")).toBe(4);
     expect(characterFrameCount("zombie","walk")).toBe(4);
   });

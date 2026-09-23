@@ -14,7 +14,7 @@ export type CharacterAction =
 export const CHARACTER_W = 32;
 export const CHARACTER_H = 32;
 export const CHARACTER_FEET_Y = 28;
-export const CHARACTER_SCALE = 2;
+export const CHARACTER_SCALE = 3;
 export const CHARACTER_FRAME_COUNTS: Record<
   CharacterKind,
   Partial<Record<CharacterAction, number>>

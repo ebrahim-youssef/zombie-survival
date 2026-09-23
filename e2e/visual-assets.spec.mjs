@@ -17,6 +17,7 @@ test("art assets are initialized at native pixel resolution in a live scene",asy
     lantern:{width:24,height:40},
     heart:{width:18,height:16},
     shelf:{width:68,height:94},
+    paper:{width:32,height:28},
   });
   await page.waitForTimeout(1600);
   // Publish the actual browser-rendered scene for review in the Actions run.

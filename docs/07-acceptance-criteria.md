@@ -125,13 +125,13 @@ than being inferred from headless Chromium.
 ### Performance/art
 - [ ] Average gameplay is sufficiently smooth on a modest mobile device.
 - [ ] No noticeable per-round buildup of zombie corpses/effects.
-- [ ] Review the 48×64 angled procedural preview on real screens; replace
+- [ ] Review the current 32×32 chunky procedural characters on real screens; replace
       with final artist-authored sprites before claiming final production art.
 
 ### Arcade visual regression / acceptance
 
 Automated:
-- [ ] `CharacterArt` exports 32 × 32 source frames at 2× display.
+- [ ] `CharacterArt` exports 32 × 32 source frames at 3× display.
 - [ ] Eight directional idle/walk and combat textures exist.
 - [ ] Environment textures (lantern, barrel, shelf, rug, chest, wall
       signs, debris) register at scene start without browser errors.

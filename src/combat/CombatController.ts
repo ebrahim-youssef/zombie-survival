@@ -167,8 +167,10 @@ export class CombatController {
       zombies.filter((zombie) => !zombie.isDead),
     );
 
+    // Only the presentation is offset to the visible 3/4 rifle;
+    // world hitscan still originates from the agreed physics footprint.
     this.effects.showShot(
-      muzzle,
+      this.player.getVisibleMuzzlePosition(direction),
       result.end,
       definition.tracerDurationMs,
     );

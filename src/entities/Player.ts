@@ -24,7 +24,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
     this.setDepth(8+y/100);
     this.setCollideWorldBounds(false);
     // Hitbox remains on the floor/feet, regardless of tall visual sprite.
-    (this.body as Phaser.Physics.Arcade.Body).setCircle(11,21,45);
+    (this.body as Phaser.Physics.Arcade.Body).setCircle(11,37,73);
   }
   get health():number{return this.currentHealth;}
   get maxHealth():number{return PLAYER_CONFIG.maxHealth;}
@@ -87,6 +87,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
       this.currentTexture=key;
     }
     this.setDepth(8+this.y/100);
+  }
+  /** Visual gun-barrel offset; hitscan remains feet-centred for balance. */
+  getVisibleMuzzlePosition(direction:Phaser.Math.Vector2):Phaser.Math.Vector2{
+    const unit=direction.clone();
+    if(unit.lengthSq()===0)unit.set(1,0);
+    else unit.normalize();
+    return new Phaser.Math.Vector2(
+      this.x+unit.x*31,
+      this.y-24+unit.y*19,
+    );
   }
   getMuzzlePosition(direction:Phaser.Math.Vector2):Phaser.Math.Vector2{
     const normal=direction.clone();

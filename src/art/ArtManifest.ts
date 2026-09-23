@@ -19,6 +19,7 @@ export const ENV_TEXTURES = {
   wallBuyMr6: "cabin:wall-mr6",
   wallBuyKuda: "cabin:wall-kuda",
   debris: "cabin:debris",
+  paper: "cabin:paper",
   crate: "cabin:crate",
   sign: "cabin:poster",
 } as const;

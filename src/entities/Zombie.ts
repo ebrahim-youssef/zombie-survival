@@ -32,7 +32,7 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite{
     this.setScale(CHARACTER_SCALE);
     this.setDepth(8+y/100);
     (this.body as Phaser.Physics.Arcade.Body).setCircle(
-      ZOMBIE_CONFIG.colliderRadius,21,45,
+      ZOMBIE_CONFIG.colliderRadius,37,73,
     );
     (this.body as Phaser.Physics.Arcade.Body).setBounce(0);
   }

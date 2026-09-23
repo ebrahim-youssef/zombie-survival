@@ -31,6 +31,7 @@ if(import.meta.env.DEV && new URLSearchParams(location.search).has("smoke")){
           lantern:dimensions("cabin:lantern"),
           heart:dimensions("hud:heart"),
           shelf:dimensions("cabin:shelf"),
+          paper:dimensions("cabin:paper"),
         };
       },
       forceGameOver:():void=>

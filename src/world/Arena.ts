@@ -143,7 +143,10 @@ export class Arena {
   private createWindow(
     id: WindowId, start: Phaser.Math.Vector2, end: Phaser.Math.Vector2,
   ): ArenaWindow {
-    const center = Phaser.Math.LinearXY(start, end, 0.5);
+    // Side windows sit closer to the rear of the cabin, matching the
+    // approved three-quarter room composition.
+    const t = id === "south-east" ? .38 : id === "north-west" ? .62 : .5;
+    const center = Phaser.Math.LinearXY(start, end, t);
     const outward = center.clone().subtract(this.center).normalize();
     return {
       id, center,
@@ -157,9 +160,9 @@ export class Arena {
     }
     return [
       ...this.splitWall(topLeft, topRight, gapRatio),
-      ...this.splitWall(topRight, bottomRight, gapRatio),
+      ...this.splitWall(topRight, bottomRight, gapRatio, .38),
       ...this.splitWall(bottomRight, bottomLeft, gapRatio),
-      ...this.splitWall(bottomLeft, topLeft, gapRatio),
+      ...this.splitWall(bottomLeft, topLeft, gapRatio, .62),
     ];
   }
   
@@ -171,18 +174,19 @@ export class Arena {
       mr6WallBuy: new Phaser.Math.Vector2(
         this.center.x, this.center.y + this.halfHeight * .83,
       ),
-      mysteryBox: new Phaser.Math.Vector2(this.center.x + 190, this.center.y + 10),
+      mysteryBox: new Phaser.Math.Vector2(this.center.x + 205, this.center.y - 125),
     };
   }
   private splitWall(
     start: Phaser.Math.Vector2,
     end: Phaser.Math.Vector2,
     gapRatio: number,
+    midpoint = .5,
   ): readonly [Segment, Segment] {
     const halfGap = gapRatio / 2;
     return [
-      { start: start.clone(), end: Phaser.Math.LinearXY(start, end, .5 - halfGap) },
-      { start: Phaser.Math.LinearXY(start, end, .5 + halfGap), end: end.clone() },
+      { start: start.clone(), end: Phaser.Math.LinearXY(start, end, midpoint - halfGap) },
+      { start: Phaser.Math.LinearXY(start, end, midpoint + halfGap), end: end.clone() },
     ];
   }
 
@@ -396,7 +400,7 @@ export class Arena {
   private glow(x: number, y: number, radius: number): void {
     const g = this.illumination;
     for (let i = 4; i >= 1; i -= 1) {
-      g.fillStyle(0xffc254, .026 + i * .012);
+      g.fillStyle(0xffb741, .021 + i * .018);
       g.fillEllipse(x, y, radius * i / 2, radius * i / 3);
     }
   }
@@ -406,14 +410,18 @@ export class Arena {
     this.prop(ENV_TEXTURES.rug, x + 278, y + 218, 2.0, -1);
     this.prop(ENV_TEXTURES.shelf, x + 320, y - 148, 1.28);
     this.prop(ENV_TEXTURES.barrel, x - 355, y - 115, 1.33);
-    this.prop(ENV_TEXTURES.lantern, x - 355, y - 161, 1.24, 2);
-    this.glow(x - 355, y - 180, 180);
+    this.prop(ENV_TEXTURES.lantern, x - 355, y - 161, 1.65, 2);
+    this.glow(x - 355, y - 180, 140);
     this.prop(ENV_TEXTURES.crate, x - 330, y + 229, 1.3);
     this.prop(ENV_TEXTURES.crate, x - 384, y + 196, 1.0);
     this.prop(ENV_TEXTURES.crate, x + 412, y + 165, 1.33);
-    this.prop(ENV_TEXTURES.lantern, x + 438, y + 119, 1.1, 3);
-    this.glow(x + 438, y + 124, 155);
-    this.glow(this.interactions.mysteryBox.x, this.interactions.mysteryBox.y, 170);
+    this.prop(ENV_TEXTURES.lantern, x + 438, y + 119, 1.5, 3);
+    this.glow(x + 438, y + 124, 132);
+    this.glow(this.interactions.mysteryBox.x, this.interactions.mysteryBox.y, 150);
+    this.prop(ENV_TEXTURES.crate, x - 477, y + 212, 1.15);
+    this.prop(ENV_TEXTURES.crate, x + 510, y + 158, 1.15);
+    this.prop(ENV_TEXTURES.paper, x - 260, y + 143, 1.18, -2).setAngle(-12);
+    this.prop(ENV_TEXTURES.paper, x + 95, y + 212, .86, -2).setAngle(24);
 
     this.prop(ENV_TEXTURES.sign, x + 484, y + 61, 1.0);
     const sign = this.scene.add.text(

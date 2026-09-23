@@ -63,7 +63,7 @@ outstanding; see `docs/08-implementation-plan.md`.
 - Game-over scene owns working Restart / Main Menu buttons and Enter / Space.
 - Mobile stick auto-fire + visible zombie aim assist by default; manual and
   auto-aim + fire button modes available in Settings.
-- Original procedural full-body angled 48×64 character frames and action
+- Original procedural full-body angled 32×32 chunky native character frames and action
   animations for eight facings replace the old rotating top-down blocks.
 - No copied Zelda or Call of Duty artwork is used.
 - Physical mobile device/visual acceptance remains necessary.
@@ -71,12 +71,12 @@ outstanding; see `docs/08-implementation-plan.md`.
 ## Arcade cabin art pass
 
 The game now produces original 32 × 32 low-resolution player/zombie frames
-at a crisp 2× world display scale, preserving the feet-based collision
+at a crisp 3× world display scale, preserving the feet-based collision
 layout and all eight movement/aim facings. This is an original visual
 interpretation of the approved arcade-zombie screenshot, not copied
 commercial sprite art.
 
-The arena's grey diamond grid has been redrawn as warm plank flooring,
+The arena now uses a four-window projected trapezoid room with warm plank flooring,
 timber cabin walls, four shattered windows, moonlit blue exterior,
 bookshelves, lanterns, barrels, crates, carpet, and aged wall décor.
 Wall purchases have stencilled gun plates; the Mystery Box is now a
