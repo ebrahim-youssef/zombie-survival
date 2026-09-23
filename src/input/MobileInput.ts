@@ -29,6 +29,7 @@ export class MobileInput implements InputSource{
   private readonly movementStick:Stick;
   private readonly aimStick:Stick;
   private readonly buttons:Action[]=[];
+  private pointerEvents=0;
   private firePointerId:number|null=null;
   private fireDown=false;
   private pendingFire=false;
@@ -45,7 +46,6 @@ export class MobileInput implements InputSource{
     private readonly arena:Arena,
     private readonly getZombies:()=>readonly Zombie[],
   ){
-    scene.input.addPointer(5);
     this.layout=mobileControlsLayout(camera.width,camera.height);
     this.movementStick=this.createStick("MOVE");
     this.aimStick=this.createStick("AIM");
@@ -55,9 +55,16 @@ export class MobileInput implements InputSource{
     ] as const;
     for(const [name,label] of specs)this.buttons.push(this.createButton(name,label));
     this.resize(camera.width,camera.height);
-    scene.input.on(Phaser.Input.Events.POINTER_MOVE,this.onMove,this);
-    scene.input.on(Phaser.Input.Events.POINTER_UP,this.onUp,this);
-    scene.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE,this.onUp,this);
+    // Phaser GameObject hit-testing is not reliable enough for movable
+    // controls with simultaneous touch points. Capture Pointer Events on
+    // the canvas itself and perform explicit screen-space hit testing.
+    // The canvas uses touch-action:none; pointer capture keeps dragging
+    // associated with the initial finger even across other controls.
+    const canvas=scene.game.canvas;
+    canvas.addEventListener("pointerdown",this.onDomDown);
+    canvas.addEventListener("pointermove",this.onDomMove);
+    window.addEventListener("pointerup",this.onDomUp);
+    window.addEventListener("pointercancel",this.onDomUp);
     window.addEventListener("blur",this.onBlur);
   }
   /** Dev smoke diagnostics for actual simulated touch input. */
@@ -118,6 +125,7 @@ export class MobileInput implements InputSource{
     this.melee=false;this.reload=false;this.interact=false;this.swap=0;this.pause=false;
   }
   resize(width:number,height:number):void{
+    if(this.movementStick.pointerId!==null||this.aimStick.pointerId!==null)this.reset();
     this.layout=mobileControlsLayout(width,height);
     this.placeStick(this.movementStick,this.layout.move);
     this.placeStick(this.aimStick,this.layout.aim);
@@ -132,9 +140,11 @@ export class MobileInput implements InputSource{
   }
   destroy():void{
     this.reset();
-    this.scene.input.off(Phaser.Input.Events.POINTER_MOVE,this.onMove,this);
-    this.scene.input.off(Phaser.Input.Events.POINTER_UP,this.onUp,this);
-    this.scene.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE,this.onUp,this);
+    const canvas=this.scene.game.canvas;
+    canvas.removeEventListener("pointerdown",this.onDomDown);
+    canvas.removeEventListener("pointermove",this.onDomMove);
+    window.removeEventListener("pointerup",this.onDomUp);
+    window.removeEventListener("pointercancel",this.onDomUp);
     window.removeEventListener("blur",this.onBlur);
     for(const stick of [this.movementStick,this.aimStick]){
       stick.base.destroy();stick.knob.destroy();stick.label.destroy();
@@ -144,7 +154,7 @@ export class MobileInput implements InputSource{
   private readonly onBlur=():void=>this.reset();
   private createStick(label:string):Stick{
     const base=this.scene.add.circle(0,0,48,0x111312,.52)
-      .setStrokeStyle(2,0xd8d3c7,.62).setScrollFactor(0).setDepth(4000).setInteractive();
+      .setStrokeStyle(2,0xd8d3c7,.62).setScrollFactor(0).setDepth(4000);
     const knob=this.scene.add.circle(0,0,23,0xd6ad55,.54)
       .setStrokeStyle(2,0xf0d27a,.8).setScrollFactor(0).setDepth(4001);
     const text=this.scene.add.text(0,0,label,{
@@ -152,11 +162,6 @@ export class MobileInput implements InputSource{
     }).setOrigin(.5).setScrollFactor(0).setDepth(4001).setAlpha(.9);
     const state:Stick={center:new Phaser.Math.Vector2(),radius:48,pointerId:null,
       engaged:false,base,knob,label:text};
-    base.on("pointerdown",(pointer:Phaser.Input.Pointer)=>{
-      if(state.pointerId!==null)return;
-      state.pointerId=pointer.id;
-      this.updateStick(state,pointer);
-    });
     return state;
   }
   private placeStick(
@@ -173,17 +178,30 @@ export class MobileInput implements InputSource{
   }
   private createButton(name:Action["name"],label:string):Action{
     const base=this.scene.add.circle(0,0,26,0x252923,.83)
-      .setStrokeStyle(2,0xd6ad55,.9).setScrollFactor(0).setDepth(4000)
-      .setInteractive();
+      .setStrokeStyle(2,0xd6ad55,.9).setScrollFactor(0).setDepth(4000);
     const text=this.scene.add.text(0,0,label,{
       fontFamily:"monospace",fontSize:"12px",color:"#f0d27a",
     }).setOrigin(.5).setScrollFactor(0).setDepth(4001);
-    base.on("pointerdown",(pointer:Phaser.Input.Pointer)=>{
-      base.setAlpha(1);
-      switch(name){
+    return {name,base,label:text};
+  }
+  private readonly onDomDown=(event:PointerEvent):void=>{
+    this.pointerEvents+=1;
+    const {x,y}=this.screenPosition(event);
+    // Buttons take priority if hit areas approach each other on small
+    // landscape viewports; do not allow a finger to control two actions.
+    for(const button of this.buttons){
+      const pos=this.layout[button.name];
+      const radius=button.name==="pause"?27:
+        button.name==="fire"?this.layout.actionRadius+9:
+        this.layout.actionRadius+6;
+      if(Math.hypot(x-pos.x,y-pos.y)>radius)continue;
+      button.base.setAlpha(1);
+      switch(button.name){
         case"fire":
           if(this.firePointerId===null){
-            this.firePointerId=pointer.id;this.fireDown=true;this.pendingFire=true;
+            this.firePointerId=event.pointerId;
+            this.fireDown=true;
+            this.pendingFire=true;
           }break;
         case"melee":this.melee=true;break;
         case"reload":this.reload=true;break;
@@ -191,32 +209,55 @@ export class MobileInput implements InputSource{
         case"swap":this.swap=1;break;
         case"pause":this.pause=true;break;
       }
-    });
-    base.on("pointerup",()=>base.setAlpha(.83));
-    base.on("pointerout",()=>base.setAlpha(.83));
-    return {name,base,label:text};
-  }
-  private onMove(pointer:Phaser.Input.Pointer):void{
-    if(this.movementStick.pointerId===pointer.id){
-      this.updateStick(this.movementStick,pointer);
-    }else if(this.aimStick.pointerId===pointer.id){
-      this.updateStick(this.aimStick,pointer);
+      this.capturePointer(event);
+      return;
     }
-  }
-  private onUp(pointer:Phaser.Input.Pointer):void{
     for(const stick of [this.movementStick,this.aimStick]){
-      if(stick.pointerId!==pointer.id)continue;
-      stick.pointerId=null;stick.engaged=false;this.centerKnob(stick);
+      if(stick.pointerId!==null)continue;
+      if(Math.hypot(x-stick.center.x,y-stick.center.y)>stick.radius+8)continue;
+      stick.pointerId=event.pointerId;
+      this.updateStick(stick,x,y);
+      this.capturePointer(event);
+      return;
+    }
+  };
+  private readonly onDomMove=(event:PointerEvent):void=>{
+    const {x,y}=this.screenPosition(event);
+    if(this.movementStick.pointerId===event.pointerId){
+      this.updateStick(this.movementStick,x,y);
+    }else if(this.aimStick.pointerId===event.pointerId){
+      this.updateStick(this.aimStick,x,y);
+    }
+  };
+  private readonly onDomUp=(event:PointerEvent):void=>{
+    for(const stick of [this.movementStick,this.aimStick]){
+      if(stick.pointerId!==event.pointerId)continue;
+      stick.pointerId=null;
+      stick.engaged=false;
+      this.centerKnob(stick);
       if(stick===this.movementStick)this.move.set(0,0);
     }
-    if(this.firePointerId===pointer.id){
-      this.firePointerId=null;this.fireDown=false;
+    if(this.firePointerId===event.pointerId){
+      this.firePointerId=null;
+      this.fireDown=false;
     }
     for(const button of this.buttons)button.base.setAlpha(.83);
+  };
+  private screenPosition(event:PointerEvent):{x:number;y:number}{
+    const rect=this.scene.game.canvas.getBoundingClientRect();
+    return {
+      x:(event.clientX-rect.left)*this.camera.width/Math.max(1,rect.width),
+      y:(event.clientY-rect.top)*this.camera.height/Math.max(1,rect.height),
+    };
   }
-  private updateStick(stick:Stick,pointer:Phaser.Input.Pointer):void{
-    let dx=pointer.x-stick.center.x;
-    let dy=pointer.y-stick.center.y;
+  private capturePointer(event:PointerEvent):void{
+    if(event.cancelable)event.preventDefault();
+    try{this.scene.game.canvas.setPointerCapture(event.pointerId);}
+    catch{/* Pointer capture unavailable; global pointerup still clears. */}
+  }
+  private updateStick(stick:Stick,x:number,y:number):void{
+    let dx=x-stick.center.x;
+    let dy=y-stick.center.y;
     const length=Math.hypot(dx,dy);
     if(length>stick.radius){
       const ratio=stick.radius/length;dx*=ratio;dy*=ratio;
