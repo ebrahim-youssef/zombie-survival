@@ -72,17 +72,20 @@ Enforced by pure `src/art/worldLayers.ts` and tested:
 3. `groundDecal` −55: **rug, scattered paper, blood, flat debris**.
    These NEVER use y-sort and NEVER obscure player or zombies.
 4. `groundLight` −50: lantern and chest glow pools on the ground.
-5. `outsideActor` −45: zombies outside the window, behind wall face.
-6. `rearWall` −40: rear and side wall faces, gaps and window frames.
-7. `wallDecal` −35: wall-buy signage/posters; never occlude actors.
-8. `actorDepth(y)` 100 + y/1000: player, inside zombies, corpses.
-9. `tallPropDepth(footY)` actorDepth + 0.001: crates, shelves,
+5. `windowBackdrop` −47: blue exterior visible through actual wall gaps.
+   The backdrop sits **under outside zombies**, not over them.
+6. `outsideActor` −45: zombies outside the window, behind wall face.
+7. `rearWall` −40: rear and side wall faces, gaps and window frames.
+8. `wallDecal` −35: wall-buy signage/posters; never occlude actors.
+9. `actorDepth(y)` 100 + y/1000: player, inside zombies, corpses.
+10. `tallPropDepth(footY)` actorDepth + 0.001: crates, shelves,
    barrels, lantern bodies and Mystery Box. They occlude actors only
    when physically **in front** by foot anchor; behind actors otherwise.
-10. `foregroundWall` 800: low foreground cutaway wall/ledge only.
-11. `combatEffects` 900; `hud` 2000+; `debug` 3500+.
+11. `foregroundWall` 800: low foreground cutaway wall/ledge only.
+12. `combatEffects` 900; `hud` 2000+; `debug` 3500+.
 
-**Layering invariants:** `groundDecal < outsideActor < rearWall <
+**Layering invariants:** `groundDecal < windowBackdrop <
+outsideActor < rearWall <
 actorDepth < foregroundWall < hud`, and two inside actors should switch
 occlusion ordering when their feet cross. Effects are presentation only:
 a decal never becomes an invisible combat collider.
@@ -97,3 +100,11 @@ a decal never becomes an invisible combat collider.
   and independent torso hurtboxes unchanged.
 - Capture a real browser screenshot through CI. Visual QA on actual
   small-screen Android/iOS remains mandatory for final art approval.
+
+### Window aperture invariant
+
+Actual wooden wall faces must be rendered in two segments, split by the
+SAME `windowGapFractions` as bullet collision. The blue opening pane lives
+in `windowBackdrop`, below outside zombies; only frames and breakable-looking
+decorative boards remain on the wall layer. Otherwise zombies would appear
+to pop into the room after crossing an invisible solid wall.

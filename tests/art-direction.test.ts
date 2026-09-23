@@ -16,6 +16,7 @@ describe("three-quarter art rendering contract",()=>{
       expect(tallPropDepth(y)).toBeGreaterThan(actorDepth(y));
       expect(tallPropDepth(y-5)).toBeLessThan(actorDepth(y));
       expect(actorDepth(y)).toBeLessThan(WORLD_DEPTH.foregroundWall);
+      expect(WORLD_DEPTH.windowBackdrop).toBeLessThan(WORLD_DEPTH.outsideActor);
       expect(WORLD_DEPTH.outsideActor).toBeLessThan(WORLD_DEPTH.rearWall);
     }
   });

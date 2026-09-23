@@ -18,6 +18,9 @@ test("Stage 3: expanded three-quarter room keeps floor material below every acto
   expect(state.room.halfHeight).toBe(470);
   expect(state.room.rearWidthRatio).toBe(.78);
   expect(state.room.windowOpeningWidth).toBe(116);
+  expect(state.room.windowBackdropDepth).toBe(-47);
+  expect(state.room.rearWallDepth).toBe(-40);
+  expect(state.room.foregroundWallDepth).toBe(800);
   expect(state.room.polygon).toHaveLength(4);
   expect(state.room.polygon[0].y).toBe(state.room.polygon[1].y);
   expect(state.room.polygon[2].y).toBe(state.room.polygon[3].y);

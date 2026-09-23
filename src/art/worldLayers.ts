@@ -8,6 +8,7 @@ export const WORLD_DEPTH = {
   floor: -60,
   groundDecal: -55,
   groundLight: -50,
+  windowBackdrop: -47,
   outsideActor: -45,
   rearWall: -40,
   wallDecal: -35,

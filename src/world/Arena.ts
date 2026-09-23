@@ -41,6 +41,7 @@ export class Arena {
   private readonly graphics: Phaser.GameObjects.Graphics;
   private readonly wallGraphics: Phaser.GameObjects.Graphics;
   private readonly frontWallGraphics: Phaser.GameObjects.Graphics;
+  private readonly windowBackdrop: Phaser.GameObjects.Graphics;
   private readonly exterior: Phaser.GameObjects.Graphics;
   private readonly illumination: Phaser.GameObjects.Graphics;
   private readonly props: Phaser.GameObjects.GameObject[] = [];
@@ -67,6 +68,7 @@ export class Arena {
     this.graphics = scene.add.graphics().setDepth(WORLD_DEPTH.floor);
     this.wallGraphics = scene.add.graphics().setDepth(WORLD_DEPTH.rearWall);
     this.frontWallGraphics = scene.add.graphics().setDepth(WORLD_DEPTH.foregroundWall);
+    this.windowBackdrop = scene.add.graphics().setDepth(WORLD_DEPTH.windowBackdrop);
     this.illumination = scene.add.graphics().setDepth(WORLD_DEPTH.groundLight);
 
     this.drawExterior();
@@ -113,6 +115,7 @@ export class Arena {
     this.graphics.destroy();
     this.wallGraphics.destroy();
     this.frontWallGraphics.destroy();
+    this.windowBackdrop.destroy();
   }
 
   private createWindows(): readonly ArenaWindow[] {
@@ -295,45 +298,49 @@ export class Arena {
   }
 
 
+  /** Render solid wall pieces on BOTH sides of the genuine physics gap. */
   private drawWalls(): void {
-    const [tl, tr, br, bl] = this.vertices;
-    if (!tl || !tr || !br || !bl) return;
-    const edges: readonly (readonly [Phaser.Math.Vector2, Phaser.Math.Vector2])[] = [
-      [tl, tr], [tr, br], [br, bl], [bl, tl],
-    ];
-    edges.forEach(([a, b], index) => {
-      // Three tall readable walls, with a low cutaway foreground ledge.
-      const back = index !== 2;
-      const rise = index === 0 ? 88 : back ? 92 : 22;
-      const g = back ? this.wallGraphics : this.frontWallGraphics;
-      const wallColor = index === 0 ? 0x63412f
-        : index === 1 ? 0x55372c : index === 3 ? 0x73432d : 0x3e302c;
-      g.fillStyle(wallColor, 1);
-      g.fillPoints([
-        a.clone(), b.clone(),
-        new Phaser.Math.Vector2(b.x, b.y - rise),
-        new Phaser.Math.Vector2(a.x, a.y - rise),
-      ], true);
-      g.lineStyle(back ? 12 : 8, CABIN_PALETTE.woodShadow, 1);
-      g.lineBetween(a.x, a.y - rise, b.x, b.y - rise);
-      g.lineStyle(3, CABIN_PALETTE.woodEdge, .9);
-      g.lineBetween(a.x, a.y - rise + 4, b.x, b.y - rise + 4);
-      const length = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
-      for (let offset = 35; offset < length - 25; offset += 54) {
-        const at = Phaser.Math.LinearXY(a, b, offset / length);
-        g.lineStyle(2, 0x362521, .74);
-        g.lineBetween(
-          at.x, at.y - rise + 10, at.x, at.y - 4,
-        );
-        g.lineStyle(1, 0xa16a40, .6);
-        g.lineBetween(
-          at.x + 4, at.y - rise + 10, at.x + 4, at.y - 6,
-        );
+    const [tl,tr,br,bl]=this.vertices;
+    if(!tl||!tr||!br||!bl)return;
+    const edges:readonly (readonly [
+      Phaser.Math.Vector2,Phaser.Math.Vector2
+    ])[]=[[tl,tr],[tr,br],[br,bl],[bl,tl]];
+    edges.forEach(([a,b],index)=>{
+      const back=index!==2;
+      const rise=index===0?88:back?92:22;
+      const g=back?this.wallGraphics:this.frontWallGraphics;
+      const wallColor=index===0?0x63412f:index===1?0x55372c:
+        index===3?0x73432d:0x3e302c;
+      const length=Phaser.Math.Distance.Between(a.x,a.y,b.x,b.y);
+      const [low,high]=windowGapFractions(
+        length,index,this.dimensions.windowOpeningWidth,
+      );
+      const leftEnd=Phaser.Math.LinearXY(a,b,low);
+      const rightStart=Phaser.Math.LinearXY(a,b,high);
+      for(const [from,to] of [[a,leftEnd],[rightStart,b]] as const){
+        g.fillStyle(wallColor,1);
+        g.fillPoints([
+          from.clone(),to.clone(),
+          new Phaser.Math.Vector2(to.x,to.y-rise),
+          new Phaser.Math.Vector2(from.x,from.y-rise),
+        ],true);
+        g.lineStyle(back?12:8,CABIN_PALETTE.woodShadow,1);
+        g.lineBetween(from.x,from.y-rise,to.x,to.y-rise);
+        g.lineStyle(3,CABIN_PALETTE.woodEdge,.9);
+        g.lineBetween(from.x,from.y-rise+4,to.x,to.y-rise+4);
       }
-      this.drawWindow(g, this.windows[index]!, a, b, back);
+      for(let distance=35;distance<length-25;distance+=54){
+        const fraction=distance/length;
+        if(fraction>=low-.015&&fraction<=high+.015)continue;
+        const at=Phaser.Math.LinearXY(a,b,fraction);
+        g.lineStyle(2,0x362521,.74);
+        g.lineBetween(at.x,at.y-rise+10,at.x,at.y-4);
+        g.lineStyle(1,0xa16a40,.6);
+        g.lineBetween(at.x+4,at.y-rise+10,at.x+4,at.y-6);
+      }
+      this.drawWindow(g,this.windows[index]!,a,b,back);
     });
   }
-
 
   private drawWindow(
     g: Phaser.GameObjects.Graphics,
@@ -348,15 +355,18 @@ export class Arena {
     const b = window.center.clone().add(tangent.clone().scale(57));
     const au = a.clone().add(new Phaser.Math.Vector2(0, -raise));
     const bu = b.clone().add(new Phaser.Math.Vector2(0, -raise));
-    g.fillStyle(CABIN_PALETTE.night, 1);
-    g.fillPoints([a, b, bu, au], true);
-    g.fillStyle(CABIN_PALETTE.nightBlue, .83);
-    g.fillPoints([
+    // Night color belongs BEHIND the entering zombie. Only the wooden
+    // frame/boards stay on the upper wall layer, so the opening is real.
+    const glass=this.windowBackdrop;
+    glass.fillStyle(CABIN_PALETTE.night,1);
+    glass.fillPoints([a,b,bu,au],true);
+    glass.fillStyle(CABIN_PALETTE.nightBlue,.52);
+    glass.fillPoints([
       a.clone().add(tangent.clone().scale(6)),
       b.clone().add(tangent.clone().scale(-6)),
       bu.clone().add(tangent.clone().scale(-6)),
       au.clone().add(tangent.clone().scale(6)),
-    ], true);
+    ],true);
     g.lineStyle(10, 0x352420, 1);
     g.lineBetween(au.x, au.y, bu.x, bu.y);
     g.lineBetween(a.x, a.y, au.x, au.y);
@@ -407,12 +417,16 @@ export class Arena {
     polygon:readonly {x:number;y:number}[];
     windowOpeningWidth:number;
     props:readonly {texture:string;depth:number;footY:number}[];
+    windowBackdropDepth:number; rearWallDepth:number; foregroundWallDepth:number;
   }{
     return {
       halfWidth:this.halfWidth,halfHeight:this.halfHeight,
       rearWidthRatio:this.dimensions.rearWidthRatio,
       polygon:this.vertices.map(p=>({x:p.x,y:p.y})),
       windowOpeningWidth:this.dimensions.windowOpeningWidth,
+      windowBackdropDepth:this.windowBackdrop.depth,
+      rearWallDepth:this.wallGraphics.depth,
+      foregroundWallDepth:this.frontWallGraphics.depth,
       props:this.props.filter(
         (p): p is Phaser.GameObjects.Image => p instanceof Phaser.GameObjects.Image,
       ).map(p=>({texture:p.texture.key,depth:p.depth,footY:p.y})),
