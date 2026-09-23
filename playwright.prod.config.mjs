@@ -2,6 +2,8 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  // Do not delete snapshots created by the preceding development browser suite.
+  outputDir: "./test-results-production",
   testMatch: "**/debug-production.spec.mjs",
   timeout: 30_000,
   expect: { timeout: 10_000 },
