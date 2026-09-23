@@ -20,16 +20,25 @@ export class CameraController {
     this.camera.setBounds(
       this.bounds.x,this.bounds.y,this.bounds.width,this.bounds.height,
     );
-    this.camera.startFollow(target,true,.12,.12);
+    this.camera.startFollow(
+      target,true,.12,.12,0,
+      this.followYOffset(camera.width,camera.height),
+    );
     this.camera.setRoundPixels(true);
     this.resize(camera.width,camera.height);
   }
   resize(width:number,height:number):void{
     this.camera.setSize(width,height);
     this.camera.setZoom(1);
+    this.camera.followOffset.set(0,this.followYOffset(width,height));
     this.camera.setBounds(
       this.bounds.x,this.bounds.y,this.bounds.width,this.bounds.height,
     );
+  }
+  // Make the rear wall and side corners visible on large desktop screens.
+  // Keep narrow touch viewports centered to avoid joystick interference.
+  private followYOffset(width:number,height:number):number{
+    return width>=1000&&height>=650?76:0;
   }
   destroy():void{this.camera.stopFollow();}
 }

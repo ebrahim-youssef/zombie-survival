@@ -16,8 +16,8 @@ The current pixel textures remain original and locally generated.
   toward a single rear point. The floor feels like a navigable room.
 - Keep Cartesian `x/y` movement and shared window-wall hit geometry;
   geometry and art projection must use the **same** polygon vertices.
-- Stage 3B increases room play area to half-width **990** and half-height
-  **470** from **730 × 330**, modest rear half-width ratio **0.78**
+- Stage 3B increases room play area to half-width **820** and half-height
+  **390** from **730 × 330**, modest rear half-width ratio **0.70**
   (formerly 0.49). Viewport stays responsive with world camera zoom 1;
   camera follows the player through the larger room rather than fitting
   the whole map into a tiny phone display.
@@ -108,3 +108,15 @@ SAME `windowGapFractions` as bullet collision. The blue opening pane lives
 in `windowBackdrop`, below outside zombies; only frames and breakable-looking
 decorative boards remain on the wall layer. Otherwise zombies would appear
 to pop into the room after crossing an invisible solid wall.
+
+### Visual framing refinement (after actual Chromium screenshot)
+
+The first Stage 3 oversized projection cropped every wall out of the
+1280 × 720 starting view. Final dimensions are **820 × 390 half-extents**
+and a **0.70** rear taper: about **51% more floor area** than Stage 2,
+while displaying the full rear wall and portions of its sloping sides.
+The desktop follow camera gives **76px extra vertical space above the
+player**; compact mobile remains centered at zoom 1 to protect controls.
+Floor plank contrast is reduced to keep the room, actors and objects
+visually dominant. This supersedes the first Stage 3A size proposal;
+the color and layer contracts remain unchanged.

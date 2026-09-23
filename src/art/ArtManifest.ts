@@ -8,6 +8,7 @@ export const CABIN_PALETTE = {
   nightBlue: 0x28465c,
   moonHighlight: 0x7897a3,
   plank: 0x90623f,
+  plankVariation: 0x986947,
   plankLight: 0xb88956,
   plankDark: 0x4f372f,
   woodShadow: 0x352a29,

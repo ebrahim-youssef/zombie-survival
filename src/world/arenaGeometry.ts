@@ -11,10 +11,10 @@ export interface ArenaDimensions {
 
 export const DEFAULT_ARENA_DIMENSIONS: ArenaDimensions={
   centerX:900,centerY:550,
-  // More than twice the visible floor area of the previous cramped room.
-  halfWidth:990,halfHeight:470,
+  // Roughly 51% more walkable area while keeping the rear wall visible.
+  halfWidth:820,halfHeight:390,
   // A modest angled top-down room, not an extreme perspective diamond.
-  rearWidthRatio:.78,
+  rearWidthRatio:.70,
   // Physics opening matches the visibly illustrated ~114px window.
   windowOpeningWidth:116,
 };

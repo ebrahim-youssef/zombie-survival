@@ -244,22 +244,25 @@ export class Arena {
       const topSpan = this.floorHalfWidthAtY(y) - 13;
       const bottomSpan = this.floorHalfWidthAtY(y + 23) - 13;
       if (topSpan < 20) continue;
-      const shade = row % 3 === 0 ? CABIN_PALETTE.plankLight
-        : row % 3 === 1 ? CABIN_PALETTE.plank
+      // Deliberately subtle planks: the large floor should not resemble
+      // striped wallpaper when the full three-quarter cabin is in view.
+      const shade = row % 4 === 0 ? CABIN_PALETTE.plankLight
+        : row % 4 === 1 ? CABIN_PALETTE.plankVariation
+        : row % 4 === 2 ? CABIN_PALETTE.plank
         : CABIN_PALETTE.plankDark;
-      g.fillStyle(shade, .82);
+      g.fillStyle(shade, row % 4 === 3 ? .10 : .31);
       g.fillPoints([
         new Phaser.Math.Vector2(this.center.x - topSpan, y + 1),
         new Phaser.Math.Vector2(this.center.x + topSpan, y + 1),
         new Phaser.Math.Vector2(this.center.x + bottomSpan, y + 22),
         new Phaser.Math.Vector2(this.center.x - bottomSpan, y + 22),
       ], true);
-      g.lineStyle(2, 0x462a22, .85);
+      g.lineStyle(1, CABIN_PALETTE.woodShadow, .52);
       g.lineBetween(
         this.center.x - bottomSpan, y + 23,
         this.center.x + bottomSpan, y + 23,
       );
-      g.lineStyle(1, 0xbc804e, .46);
+      g.lineStyle(1, CABIN_PALETTE.woodEdge, .22);
       g.lineBetween(
         this.center.x - topSpan + 5, y + 4,
         this.center.x + topSpan - 5, y + 4,
@@ -271,7 +274,7 @@ export class Arena {
         let seam = left + ((row % 2) * 51 + 100);
         seam < right; seam += 102
       ) {
-        g.lineStyle(2, 0x4a2f27, .84);
+        g.lineStyle(2, CABIN_PALETTE.woodShadow, .55);
         g.lineBetween(seam, y + 2, seam, y + 21);
         g.fillStyle(0x3b2924, .75);
         g.fillRect(seam - 5, y + 8, 2, 2);

@@ -10,16 +10,16 @@ describe("three-quarter adventure room geometry",()=>{
     const oldArea=(oldBackWidth+oldFrontWidth)*oldHeight/2;
     expect(c.halfWidth).toBeGreaterThan(730);
     expect(c.halfHeight).toBeGreaterThan(330);
-    expect(floorPolygonArea(v)).toBeGreaterThan(oldArea*2);
+    expect(floorPolygonArea(v)).toBeGreaterThan(oldArea*1.5);
     expect(v[0].y).toBe(v[1].y);
     expect(v[2].y).toBe(v[3].y);
-    expect(v[1].x-v[0].x).toBeCloseTo(2*c.halfWidth*.78);
+    expect(v[1].x-v[0].x).toBeCloseTo(2*c.halfWidth*.70);
   });
   it("uses modest wall taper and deterministic floor boundaries",()=>{
-    expect(cabinHalfWidthAtY(v[0].y,c)).toBeCloseTo(c.halfWidth*.78);
+    expect(cabinHalfWidthAtY(v[0].y,c)).toBeCloseTo(c.halfWidth*.70);
     expect(cabinHalfWidthAtY(v[2].y,c)).toBe(c.halfWidth);
-    expect(cabinHalfWidthAtY(c.centerY,c)).toBeGreaterThan(c.halfWidth*.78);
-    expect(cabinHalfWidthAtY(v[0].y-200,c)).toBeCloseTo(c.halfWidth*.78);
+    expect(cabinHalfWidthAtY(c.centerY,c)).toBeGreaterThan(c.halfWidth*.70);
+    expect(cabinHalfWidthAtY(v[0].y-200,c)).toBeCloseTo(c.halfWidth*.70);
   });
   it("aligns the four real window gaps with visible window midpoints",()=>{
     for(let i=0;i<4;i++){

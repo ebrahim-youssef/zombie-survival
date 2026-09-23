@@ -14,9 +14,9 @@ test("Stage 3: expanded three-quarter room keeps floor material below every acto
   );
   const state=await page.evaluate(()=>window.__zombieSmoke.artLayerState());
   expect(state).not.toBeNull();
-  expect(state.room.halfWidth).toBe(990);
-  expect(state.room.halfHeight).toBe(470);
-  expect(state.room.rearWidthRatio).toBe(.78);
+  expect(state.room.halfWidth).toBe(820);
+  expect(state.room.halfHeight).toBe(390);
+  expect(state.room.rearWidthRatio).toBe(.70);
   expect(state.room.windowOpeningWidth).toBe(116);
   expect(state.room.windowBackdropDepth).toBe(-47);
   expect(state.room.rearWallDepth).toBe(-40);
@@ -24,6 +24,17 @@ test("Stage 3: expanded three-quarter room keeps floor material below every acto
   expect(state.room.polygon).toHaveLength(4);
   expect(state.room.polygon[0].y).toBe(state.room.polygon[1].y);
   expect(state.room.polygon[2].y).toBe(state.room.polygon[3].y);
+  // Visual regression: show both angled rear corners and the wall face
+  // instead of making the game look like an endless plank floor.
+  const backWallScreenY=state.room.polygon[0].y-88-state.camera.scrollY;
+  const leftCornerScreenX=state.room.polygon[0].x-state.camera.scrollX;
+  const rightCornerScreenX=state.room.polygon[1].x-state.camera.scrollX;
+  expect(backWallScreenY).toBeGreaterThan(8);
+  expect(backWallScreenY).toBeLessThan(165);
+  expect(leftCornerScreenX).toBeGreaterThan(20);
+  expect(leftCornerScreenX).toBeLessThan(150);
+  expect(rightCornerScreenX).toBeLessThan(state.camera.width-20);
+  expect(rightCornerScreenX).toBeGreaterThan(state.camera.width-150);
 
   const prop=(key)=>state.room.props.find(item=>item.texture===key);
   const rug=prop("cabin:rug");

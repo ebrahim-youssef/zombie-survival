@@ -176,8 +176,9 @@ actor ramps, `worldLayers.ts` defines depth, and
 `docs/11-art-direction-and-depth-rules.md` documents projection, pixel
 rules and the invariant that rugs NEVER cover a standing character.
 
-**3B — implementation:** widened the room to 990×470 half-dimensions,
-changed the rear-to-front taper ratio 0.49→0.78, tied all four actual
+**3B — implementation:** widened the room to 820×390 half-dimensions
+after screenshot review (~51% larger floor), and changed the
+rear-to-front taper ratio 0.49→0.70, tied all four actual
 wall collision gaps to an illustrated fixed-width 116px opening, and
 preserved the single-room wave/economy gameplay. Background geometry,
 wall faces and near cutaway ledge are now distinct Phaser display layers.
@@ -195,3 +196,11 @@ QA: pure geometry/depth/color tests and Chromium screenshot test.
 This is an original Zelda-*inspired* projection and palette, not a copy
 of a copyrighted game. Manual visual approval of the redesigned cabin
 and physical mobile testing remain pending.
+
+**Viewport visual regression:** the original 990×470 proposal left the
+back and side walls outside the 1280×720 gameplay screenshot. Final
+820×390/0.70 geometry retains a larger arena but shows the back wall,
+corner angles, windows and night exterior on desktop. A desktop follow
+offset of 76px keeps the player lower in frame; compact touch stays
+centered and zoom remains 1. Board stripe contrast was also reduced.
+Chromium checks the wall/corners' actual screen positions on entry.

@@ -179,6 +179,7 @@ export class GameScene extends Phaser.Scene {
     room:ReturnType<Arena["getRenderState"]>;
     playerDepth:number;
     playerFootY:number;
+    camera:{scrollX:number;scrollY:number;width:number;height:number};
     zombies:readonly {depth:number;enteredArena:boolean;footY:number}[];
   }|null{
     if(!import.meta.env.DEV||!this.arena||!this.player||!this.zombies)return null;
@@ -186,6 +187,12 @@ export class GameScene extends Phaser.Scene {
       room:this.arena.getRenderState(),
       playerDepth:this.player.depth,
       playerFootY:this.player.y,
+      camera:{
+        scrollX:this.cameras.main.scrollX,
+        scrollY:this.cameras.main.scrollY,
+        width:this.cameras.main.width,
+        height:this.cameras.main.height,
+      },
       zombies:this.zombies.getAliveZombies().map(z=>({
         depth:z.depth,enteredArena:z.enteredArena,footY:z.y,
       })),

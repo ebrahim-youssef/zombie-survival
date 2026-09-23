@@ -145,7 +145,9 @@ and a strict world render-order model. This draws on the general
 angled-camera readability of classic Zelda-like adventure games without
 copying Nintendo's assets.
 
-The cabin's floor is now roughly twice the previous playable area.
+The cabin now has approximately 51% more walkable floor area than
+the previous compact version, without hiding the rear wall from the
+desktop starting view.
 Window visuals, NPC entry points, hitscan openings and player bounds share
 the **same geometry**. Flat rugs, papers, ground decals and lighting always
 stay below actors. Tall furniture and the glowing Mystery Box sort against
