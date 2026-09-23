@@ -12,10 +12,10 @@ export interface GameOverData {
  */
 export class GameOverScene extends Phaser.Scene {
   private finished=false;
-  private data:GameOverData={round:1,kills:0,points:0,highScore:0,highestRound:0};
+  private resultData:GameOverData={round:1,kills:0,points:0,highScore:0,highestRound:0};
   constructor(){super("gameOver");}
   init(data:GameOverData):void{
-    this.data=data;
+    this.resultData=data;
     this.finished=false;
   }
   create():void{
@@ -48,8 +48,8 @@ export class GameOverScene extends Phaser.Scene {
       fontFamily:"monospace",fontSize:titleSize+"px",color:"#e1a55f",
     }).setOrigin(.5);
     this.add.text(w/2,contentY-(small?39:91),
-      "ROUND "+this.data.round+"    KILLS "+this.data.kills+"    POINTS "+this.data.points+
-      "\nBEST "+this.data.highScore+"    HIGHEST ROUND "+this.data.highestRound,{
+      "ROUND "+this.resultData.round+"    KILLS "+this.resultData.kills+"    POINTS "+this.resultData.points+
+      "\nBEST "+this.resultData.highScore+"    HIGHEST ROUND "+this.resultData.highestRound,{
         fontFamily:"monospace",fontSize:labelSize+"px",
         align:"center",color:"#eae6d8",lineSpacing:7,
         wordWrap:{width:Math.max(230,w-26),useAdvancedWrap:true},

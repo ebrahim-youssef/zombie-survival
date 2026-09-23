@@ -29,7 +29,7 @@ export function createGame():Phaser.Game{
     scene:[BootScene,MenuScene,GameScene,UIScene,PauseScene,GameOverScene],
   });
   // Mobile browser chrome changes visual viewport independently of orientation.
-  const refresh=():void=>game.scale.refresh();
+  const refresh=():void=>{game.scale.refresh();};
   window.visualViewport?.addEventListener("resize",refresh);
   return game;
 }
