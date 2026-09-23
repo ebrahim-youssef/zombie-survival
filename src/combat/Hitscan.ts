@@ -2,10 +2,8 @@ import Phaser from "phaser";
 import type { Zombie } from "../entities/Zombie";
 import { rayHurtboxIntersection } from "./hurtbox";
 import type { Segment } from "../utils/geometry";
-import {
-  nearestRayHit,
-  // Damage uses the visible actor's torso, NOT a tiny foot circle.
-} from "../utils/geometry";
+// Damage intersects the visible torso ellipse rather than a foot circle.
+import { nearestRayHit } from "../utils/geometry";
 
 export interface HitscanResult {
   end: Phaser.Math.Vector2;

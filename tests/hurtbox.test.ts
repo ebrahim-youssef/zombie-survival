@@ -8,11 +8,12 @@ import { nearestAimTarget } from "../src/input/mobileAim";
 describe("projected character bodies", () => {
   const feet = {x: 100, y: 200};
   it("keeps movement collision attached to the foot position when sprite raster changes", () => {
-    expect(footBodyOffsets(64 * 1.5, 56 * 1.5, 14))
-      .toEqual({x: 34, y: 70});
-    const {x, y}=footBodyOffsets(96, 84, ACTOR_HITBOXES.player.footRadius);
-    expect(100 - 48 + x + 14).toBe(100);
-    expect(200 - 84 + y + 14).toBe(200);
+    expect(footBodyOffsets(64, 56, 1.5, 15))
+      .toEqual({x: 22, y: 46, radius: 10});
+    const {x, y, radius}=footBodyOffsets(64, 56, 1.5, ACTOR_HITBOXES.player.footRadius);
+    expect(100 - 64 * .75 + (x+radius)*1.5).toBe(100);
+    expect(200 - 56 * 1.5 + (y+radius)*1.5).toBe(200);
+    expect(radius*1.5).toBe(ACTOR_HITBOXES.player.footRadius);
   });
   it("positions separate combat hurtboxes over the visible torso/head", () => {
     const player=actorHurtbox("player", feet);

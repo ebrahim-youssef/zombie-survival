@@ -126,7 +126,7 @@ close-up sheet for visual review.
 
 ## Stage 2 — Visual hitbox alignment
 
-Movement uses small centered circular foot colliders (radius 14), while
+Movement uses small centered circular foot colliders (world radius 15), while
 guns and melee use an upper-body ellipse aligned with the character's
 64px raster displayed at 1.5×. The mobile auto-aim and barrel origin
 now agree with the same combat geometry.

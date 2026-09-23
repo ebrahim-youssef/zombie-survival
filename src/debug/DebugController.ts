@@ -86,7 +86,7 @@ export class DebugController {
       playerBody: body ? {
         x: body.center.x,
         y: body.center.y,
-        radius: body.isCircle ? body.radius : body.halfWidth,
+        radius: body.halfWidth,
         isCircle: body.isCircle,
       } : null,
       playerCombat: this.player.hurtbox,
@@ -187,8 +187,9 @@ export class DebugController {
     if (body === null) return;
     this.bodyGraphics.lineStyle(2, color, 1);
     if (body.isCircle) {
+      // Body.radius is in source pixels; halfWidth is WORLD radius.
       this.bodyGraphics.strokeCircle(
-        body.center.x, body.center.y, body.radius,
+        body.center.x, body.center.y, body.halfWidth,
       );
     } else {
       this.bodyGraphics.strokeRect(

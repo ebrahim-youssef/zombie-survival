@@ -25,11 +25,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
     this.setDepth(8+y/100);
     this.setCollideWorldBounds(false);
     // Hitbox remains on the floor/feet, regardless of tall visual sprite.
-    const radius = ACTOR_HITBOXES.player.footRadius;
-    const offsets = footBodyOffsets(
-      CHARACTER_W * CHARACTER_SCALE, CHARACTER_FEET_Y * CHARACTER_SCALE, radius,
+    // Arcade offsets are SOURCE pixels, not scaled world distances.
+    const sourceCircle=footBodyOffsets(
+      CHARACTER_W,CHARACTER_FEET_Y,CHARACTER_SCALE,
+      ACTOR_HITBOXES.player.footRadius,
     );
-    (this.body as Phaser.Physics.Arcade.Body).setCircle(radius,offsets.x,offsets.y);
+    const physicsBody=this.body as Phaser.Physics.Arcade.Body;
+    physicsBody.setCircle(
+      sourceCircle.radius,sourceCircle.x,sourceCircle.y,
+    );
+    physicsBody.updateFromGameObject();
   }
   get hurtbox(){return actorHurtbox("player",this);}
   getAimAnchor():Phaser.Math.Vector2{

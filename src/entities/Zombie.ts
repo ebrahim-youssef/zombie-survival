@@ -35,14 +35,16 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite{
     this.setOrigin(.5,CHARACTER_FEET_Y/CHARACTER_H);
     this.setScale(CHARACTER_SCALE);
     this.setDepth(8+y/100);
-    const radius=ACTOR_HITBOXES.zombie.footRadius;
-    const offsets=footBodyOffsets(
-      CHARACTER_W * CHARACTER_SCALE, CHARACTER_FEET_Y * CHARACTER_SCALE, radius,
+    const sourceCircle=footBodyOffsets(
+      CHARACTER_W,CHARACTER_FEET_Y,CHARACTER_SCALE,
+      ACTOR_HITBOXES.zombie.footRadius,
     );
-    (this.body as Phaser.Physics.Arcade.Body).setCircle(
-      radius,offsets.x,offsets.y,
+    const physicsBody=this.body as Phaser.Physics.Arcade.Body;
+    physicsBody.setCircle(
+      sourceCircle.radius,sourceCircle.x,sourceCircle.y,
     );
-    (this.body as Phaser.Physics.Arcade.Body).setBounce(0);
+    physicsBody.updateFromGameObject();
+    physicsBody.setBounce(0);
   }
   get isDead():boolean{return this.dead;}
   updateBehavior(now:number,player:Player):void{

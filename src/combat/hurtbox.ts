@@ -13,20 +13,31 @@ export interface Hurtbox {
 export type ActorKind = "player" | "zombie";
 
 export const ACTOR_HITBOXES = {
-  player: { footRadius: 14, upperOffsetY: -35, upperRadiusX: 22, upperRadiusY: 36 },
-  zombie: { footRadius: 14, upperOffsetY: -35, upperRadiusX: 24, upperRadiusY: 38 },
+  player: { footRadius: 15, upperOffsetY: -35, upperRadiusX: 22, upperRadiusY: 36 },
+  zombie: { footRadius: 15, upperOffsetY: -35, upperRadiusX: 24, upperRadiusY: 38 },
 } as const;
 
 /** Feet remain at sprite's supplied origin, even after changing raster size. */
 export function footBodyOffsets(
-  renderedWidth: number,
-  renderedOriginY: number,
-  radius: number,
-): { x: number; y: number } {
-  if (!(renderedWidth > radius * 2) || !(renderedOriginY >= radius)) {
-    throw new RangeError("Foot collider exceeds sprite's visible size");
+  sourceWidth: number,
+  sourceFeetOriginY: number,
+  displayScale: number,
+  worldRadius: number,
+): { x: number; y: number; radius: number } {
+  // Phaser 3.90 Body.offset and Body.radius use SOURCE pixels; Phaser
+  // multiplies body dimensions/offset by the sprite's transform.
+  if (!(displayScale > 0) || !(worldRadius > 0)) {
+    throw new RangeError("Invalid collider dimensions");
   }
-  return { x: renderedWidth / 2 - radius, y: renderedOriginY - radius };
+  const radius = worldRadius / displayScale;
+  if (!(sourceWidth > radius * 2) || !(sourceFeetOriginY >= radius)) {
+    throw new RangeError("Foot collider exceeds source texture");
+  }
+  return {
+    radius,
+    x: sourceWidth / 2 - radius,
+    y: sourceFeetOriginY - radius,
+  };
 }
 
 export function actorHurtbox(kind: ActorKind, feet: XY): Hurtbox {

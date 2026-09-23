@@ -173,8 +173,7 @@ export class CombatController {
       zombies.filter((zombie) => !zombie.isDead),
     );
 
-    // Only the presentation is offset to the visible 3/4 rifle;
-    // world hitscan still originates from the agreed physics footprint.
+    // Presentation and world hitscan now share the same barrel origin.
     this.effects.showShot(
       muzzle,
       result.end,

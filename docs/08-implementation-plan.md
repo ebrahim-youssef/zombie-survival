@@ -143,8 +143,10 @@ Stage 2 replaces the legacy `(zombie.x,zombie.y,radius11)` damage circle
 with a separately configured, actor-aligned vertical body ellipse. Foot
 collision remains deliberately small to prevent crowd/wall trapping.
 
-- Player feet collision: radius 14, exact displayed-foot offsets.
-- Zombie feet collision: radius 14, exact displayed-foot offsets.
+- Player feet collision: **15px world radius** (10px native at 1.5×),
+  correctly scaled Arcade offsets.
+- Zombie feet collision: **15px world radius** (10px native at 1.5×),
+  correctly scaled Arcade offsets.
 - Player damage reference: ellipse center 35px above feet, radii 22×36.
 - Zombie gun/melee hurtbox: ellipse center 35px above feet, radii 24×38.
 - Desktop crosshair, shotgun pellets, hitscan and right-stick assist target
@@ -159,3 +161,10 @@ collision remains deliberately small to prevent crowd/wall trapping.
 
 The projected cutaway room, rug layering and Zelda-inspired palette
 remain **Stage 3**. They are not changed by this collision/combat stage.
+
+**Phaser 3.90 regression:** Arcade's circle radius and offsets use
+source-texture pixels, while rendered sprite width/origin use world pixels.
+The first Stage 2 build exposed a 42px body-center displacement via
+Chromium. Corrected by deriving source radius/offsets from
+`CHARACTER_W`, `CHARACTER_FEET_Y`, and `CHARACTER_SCALE`; browser
+acceptance checks the actual Arcade Body.center against player feet.
