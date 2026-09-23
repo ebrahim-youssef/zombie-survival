@@ -110,3 +110,13 @@ Game-over UI lives in an independent topmost Scene while gameplay is
 paused, so the mobile joystick and in-game controls cannot steal taps.
 Restart and Main Menu are large interactive buttons. Enter/Space restart
 and Esc returns to the menu on desktop.
+
+## UI / camera zoom invariant
+
+All gameplay, UI, and touch controls currently render through the same
+Phaser camera. Until a separate UI camera is implemented, keep
+`GameScene.cameras.main.zoom === 1`. Otherwise, `setScrollFactor(0)`
+still inherits camera **zoom**, causing the displayed joystick centers and
+the actual DOM screen-space hit targets to diverge (or clip off-screen).
+`Scale.RESIZE` keeps the canvas viewport-filling; the 48×64 full-body
+sprites are larger/readable at one game pixel per CSS pixel.

@@ -64,7 +64,6 @@ export class GameScene extends Phaser.Scene {
     );
     this.cameraController = new CameraController(
       this.cameras.main,this.player,this.arena,
-      this.inputController.touchMode,
     );
     this.damageFlash = this.add.rectangle(
       this.cameras.main.width / 2, this.cameras.main.height / 2,
@@ -164,6 +163,9 @@ export class GameScene extends Phaser.Scene {
 
   debugMobileState():{engaged:boolean;pointerId:number|null;firing:boolean}|null{
     return this.inputController?.debugMobileState()??null;
+  }
+  debugCameraZoom():number{
+    return this.cameras.main.zoom;
   }
   debugAmmo():number{
     return this.combat?.inventory.activeWeapon.snapshot().magazineAmmo??-1;

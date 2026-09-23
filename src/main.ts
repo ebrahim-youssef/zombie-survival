@@ -12,6 +12,8 @@ if(import.meta.env.DEV && new URLSearchParams(location.search).has("smoke")){
         width:game.scale.width,height:game.scale.height,
       }),
       mobileState:()=> (game.scene.getScene("game") as GameScene).debugMobileState(),
+      zoom:():number=>
+        (game.scene.getScene("game") as GameScene).debugCameraZoom(),
       ammo:():number=>
         (game.scene.getScene("game") as GameScene).debugAmmo(),
       touchMode:():boolean=>

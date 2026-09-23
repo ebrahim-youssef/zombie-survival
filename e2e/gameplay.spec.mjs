@@ -55,6 +55,7 @@ test("mobile landscape: canvas fills viewport and touch restart/main menu work",
   await page.mouse.click(width/2,height/2-4);
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("game"));
   expect(await page.evaluate(()=>window.__zombieSmoke.touchMode())).toBe(true);
+  expect(await page.evaluate(()=>window.__zombieSmoke.zoom())).toBe(1);
 
   // The right stick should aim AND repeatedly fire the MR6 in default mode.
   const firstAmmo=await page.evaluate(()=>window.__zombieSmoke.ammo());
@@ -128,6 +129,7 @@ test("portrait mobile: game uses available viewport rather than a tiny FIT canva
   await page.mouse.click(width/2,height/2-4);
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("game"));
   expect(await page.evaluate(()=>window.__zombieSmoke.touchMode())).toBe(true);
+  expect(await page.evaluate(()=>window.__zombieSmoke.zoom())).toBe(1);
   expect(errors).toEqual([]);
   await context.close();
 });
