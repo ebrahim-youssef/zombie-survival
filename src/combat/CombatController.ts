@@ -40,7 +40,7 @@ export class CombatController {
     private readonly audio: AudioController,
   ) {
     this.effects = new CombatEffects(scene);
-    this.melee = new MeleeController(this.effects);
+    this.melee = new MeleeController(this.effects,arena.wallSegments);
   }
 
   setDebugRayCapture(enabled: boolean): void {
@@ -67,10 +67,8 @@ export class CombatController {
       this.player.beginAction("reload",now);
     }
 
-    const aimDirection = new Phaser.Math.Vector2(
-      input.aimWorld.x - this.player.x,
-      input.aimWorld.y - this.player.y,
-    );
+    const aimDirection = input.aimWorld.clone()
+      .subtract(this.player.getAimAnchor());
 
     if (input.meleePressed) this.tryMelee(now, aimDirection);
 
@@ -78,7 +76,7 @@ export class CombatController {
 
     this.audio.play("shot");
     this.player.beginAction("shoot",now);
-    this.fireWeapon(aimDirection, weapon.definition, now);
+    this.fireWeapon(input.aimWorld, weapon.definition, now);
   }
 
   destroy(): void {
@@ -101,7 +99,7 @@ export class CombatController {
   }
 
   private tryMelee(now: number, aimDirection: Phaser.Math.Vector2): void {
-    const origin = new Phaser.Math.Vector2(this.player.x, this.player.y);
+    const origin = this.player.getAimAnchor();
     const previousAttack = this.melee.getLastAttackAt();
     const zombie = this.melee.tryAttack(
       now,
@@ -118,9 +116,9 @@ export class CombatController {
     const result = zombie.takeDamage(PLAYER_CONFIG.meleeDamage);
     if (!result.applied) return;
 
-    this.effects.showImpact(new Phaser.Math.Vector2(zombie.x, zombie.y), result.killed);
+    this.effects.showImpact(zombie.getAimPoint(), result.killed);
     this.effects.showDamageNumber(
-      new Phaser.Math.Vector2(zombie.x, zombie.y),
+      zombie.getAimPoint(),
       PLAYER_CONFIG.meleeDamage,
     );
     this.audio.play(result.killed ? "kill" : "hit");
@@ -128,22 +126,22 @@ export class CombatController {
   }
 
   private fireWeapon(
-    aimDirection: Phaser.Math.Vector2,
+    aimWorld: Phaser.Math.Vector2,
     definition: WeaponDefinition,
     now: number,
   ): void {
-    if (aimDirection.lengthSq() === 0) return;
+    if (aimWorld.equals(this.player.getAimAnchor())) return;
 
     const ledger = new ShotHitLedger<Zombie>();
     const zombies = this.zombies.getAliveZombies();
     for (let pellet = 0; pellet < definition.pelletCount; pellet += 1) {
-      this.firePellet(aimDirection, definition, zombies, ledger, now);
+      this.firePellet(aimWorld, definition, zombies, ledger, now);
     }
 
     for (const [zombie, outcome] of ledger.entries()) {
-      this.effects.showImpact(new Phaser.Math.Vector2(zombie.x, zombie.y), outcome.killed);
+      this.effects.showImpact(zombie.getAimPoint(), outcome.killed);
       this.effects.showDamageNumber(
-        new Phaser.Math.Vector2(zombie.x, zombie.y),
+        zombie.getAimPoint(),
         outcome.damage,
       );
       this.audio.play(outcome.killed ? "kill" : "hit");
@@ -152,14 +150,21 @@ export class CombatController {
   }
 
   private firePellet(
-    aimDirection: Phaser.Math.Vector2,
+    aimWorld: Phaser.Math.Vector2,
     definition: WeaponDefinition,
     zombies: readonly Zombie[],
     ledger: ShotHitLedger<Zombie>,
     now: number,
   ): void {
-    const direction = this.applySpread(aimDirection, definition.spreadDegrees);
-    const muzzle = this.player.getMuzzlePosition(direction);
+    // Derive the muzzle from the visual facing, then aim the ray FROM that
+    // muzzle at the actual crosshair. This removes close-range parallax.
+    const initialAim = aimWorld.clone().subtract(this.player.getAimAnchor());
+    const muzzle = this.player.getMuzzlePosition(initialAim);
+    const fromMuzzle = aimWorld.clone().subtract(muzzle);
+    const direction = this.applySpread(
+      fromMuzzle.lengthSq() ? fromMuzzle : initialAim,
+      definition.spreadDegrees,
+    );
     const result = castHitscan(
       muzzle,
       direction,
@@ -171,7 +176,7 @@ export class CombatController {
     // Only the presentation is offset to the visible 3/4 rifle;
     // world hitscan still originates from the agreed physics footprint.
     this.effects.showShot(
-      this.player.getVisibleMuzzlePosition(direction),
+      muzzle,
       result.end,
       definition.tracerDurationMs,
     );

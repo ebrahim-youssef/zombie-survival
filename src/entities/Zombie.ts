@@ -1,13 +1,17 @@
 import Phaser from "phaser";
 import {ZOMBIE_CONFIG} from "../config/zombie";
-import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H,CHARACTER_SCALE} from "../art/CharacterArt";
+import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H,CHARACTER_W,CHARACTER_SCALE} from "../art/CharacterArt";
 import {facingFromVector} from "../art/directions";
 import type {FacingDirection} from "../types/game";
 import type {Player} from "./Player";
+import { ACTOR_HITBOXES, actorHurtbox, footBodyOffsets } from "../combat/hurtbox";
 
 export interface ZombieDamageResult{applied:boolean;killed:boolean;}
 export class Zombie extends Phaser.Physics.Arcade.Sprite{
-  readonly hitRadius=ZOMBIE_CONFIG.colliderRadius;
+  get hurtbox(){return actorHurtbox("zombie",this);}
+  getAimPoint():Phaser.Math.Vector2{
+    return new Phaser.Math.Vector2(this.hurtbox.centerX,this.hurtbox.centerY);
+  }
   private readonly entryTarget:Phaser.Math.Vector2;
   private enteredRoom=false;
   private dead=false;
@@ -31,8 +35,12 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite{
     this.setOrigin(.5,CHARACTER_FEET_Y/CHARACTER_H);
     this.setScale(CHARACTER_SCALE);
     this.setDepth(8+y/100);
+    const radius=ACTOR_HITBOXES.zombie.footRadius;
+    const offsets=footBodyOffsets(
+      CHARACTER_W * CHARACTER_SCALE, CHARACTER_FEET_Y * CHARACTER_SCALE, radius,
+    );
     (this.body as Phaser.Physics.Arcade.Body).setCircle(
-      ZOMBIE_CONFIG.colliderRadius,37,73,
+      radius,offsets.x,offsets.y,
     );
     (this.body as Phaser.Physics.Arcade.Body).setBounce(0);
   }

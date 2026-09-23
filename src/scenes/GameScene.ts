@@ -177,6 +177,50 @@ export class GameScene extends Phaser.Scene {
   debugCameraZoom():number{
     return this.cameras.main.zoom;
   }
+  /**
+   * Browser-only test: fire the real MR6 at a stationary enemy whose body is
+   * 35px above the foot origin. Verifies the actual weapon/health/score path.
+   */
+  debugFireAtAlignedTarget():{
+    killed:boolean;ammoUsed:number;pointsGained:number;
+    playerFootY:number;playerCombatY:number;physicsFootY:number;
+    targetFootY:number;targetCombatY:number;
+    muzzleY:number;visualWidth:number;
+  }|null{
+    if(!import.meta.env.DEV||!this.player||!this.arena||
+       !this.zombies||!this.combat||!this.runState)return null;
+    const player=this.player;
+    const target=this.zombies.spawn(this.arena.windows[0]!,10,0);
+    target.setPosition(player.x+150,player.y);
+    const body=target.body;
+    if(body instanceof Phaser.Physics.Arcade.Body)body.reset(target.x,target.y);
+    const aimed=target.getAimPoint();
+    const anchor=player.getAimAnchor();
+    const barrel=player.getMuzzlePosition(aimed.clone().subtract(anchor));
+    const beforeAmmo=this.combat.inventory.activeWeapon.snapshot().magazineAmmo;
+    const beforePoints=this.runState.points;
+    this.combat.update({
+      move:new Phaser.Math.Vector2(),aimWorld:aimed,
+      fireHeld:true,firePressed:true,
+      meleePressed:false,reloadPressed:false,interactPressed:false,
+      slotPressed:0,cycleWeapon:0,pausePressed:false,
+    },this.clock.now+750);
+    const playerBody=player.body;
+    return {
+      killed:target.isDead,
+      ammoUsed:beforeAmmo-this.combat.inventory.activeWeapon.snapshot().magazineAmmo,
+      pointsGained:this.runState.points-beforePoints,
+      playerFootY:player.y,
+      playerCombatY:player.hurtbox.centerY,
+      physicsFootY:playerBody instanceof Phaser.Physics.Arcade.Body
+        ?playerBody.center.y:NaN,
+      targetFootY:target.y,
+      targetCombatY:target.hurtbox.centerY,
+      muzzleY:barrel.y,
+      visualWidth:player.displayWidth,
+    };
+  }
+
   debugAmmo():number{
     return this.combat?.inventory.activeWeapon.snapshot().magazineAmmo??-1;
   }

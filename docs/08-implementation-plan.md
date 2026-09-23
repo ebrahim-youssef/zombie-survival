@@ -136,3 +136,26 @@ target, not a claim of pixel-perfect duplication.
    occlusion rules (ground decals and rug strictly below all actors),
    perspective/world-projection conventions, and room expansion before
    editing the existing cabin rendering. No Nintendo game assets are reused.
+
+## Stage 2 — Independent projected combat hitboxes
+
+Stage 2 replaces the legacy `(zombie.x,zombie.y,radius11)` damage circle
+with a separately configured, actor-aligned vertical body ellipse. Foot
+collision remains deliberately small to prevent crowd/wall trapping.
+
+- Player feet collision: radius 14, exact displayed-foot offsets.
+- Zombie feet collision: radius 14, exact displayed-foot offsets.
+- Player damage reference: ellipse center 35px above feet, radii 22×36.
+- Zombie gun/melee hurtbox: ellipse center 35px above feet, radii 24×38.
+- Desktop crosshair, shotgun pellets, hitscan and right-stick assist target
+  the visible torso and head instead of the player's/zombie's foot origin.
+- The gun ray and tracer start from the same on-screen barrel location.
+- Mobile assist rejects dead/occluded targets; manual mode stays manual.
+- Melee checks visible body edges rather than a single foot-center distance,
+  while preserving its original cooldown and damage.
+- Debug key 4 shows **foot circles** and separate **upper-body ellipses**.
+- Unit tests cover geometry and targeting. Chromium QA uses the real
+  MR6 firing/scoring path on a scripted stationary dummy.
+
+The projected cutaway room, rug layering and Zelda-inspired palette
+remain **Stage 3**. They are not changed by this collision/combat stage.

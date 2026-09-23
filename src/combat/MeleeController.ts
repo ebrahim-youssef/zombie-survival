@@ -2,11 +2,16 @@ import Phaser from "phaser";
 import { PLAYER_CONFIG } from "../config/player";
 import type { Zombie } from "../entities/Zombie";
 import type { CombatEffects } from "./CombatEffects";
+import { rayHurtboxIntersection } from "./hurtbox";
+import { nearestRayHit, type Segment } from "../utils/geometry";
 
 export class MeleeController {
   private lastAttackAt = Number.NEGATIVE_INFINITY;
 
-  constructor(private readonly effects: CombatEffects) {}
+  constructor(
+    private readonly effects: CombatEffects,
+    private readonly walls: readonly Segment[],
+  ) {}
 
   getLastAttackAt(): number {
     return this.lastAttackAt;
@@ -37,16 +42,22 @@ export class MeleeController {
 
     for (const zombie of zombies) {
       if (zombie.isDead) continue;
-      const toZombie = new Phaser.Math.Vector2(
-        zombie.x - origin.x,
-        zombie.y - origin.y,
+      const target=zombie.getAimPoint();
+      const toZombie=target.clone().subtract(origin);
+      const centerDistance=toZombie.length();
+      if(centerDistance<=0)continue;
+      // Aim cone uses the visible torso; range uses the *edge* of that
+      // hurtbox instead of demanding the zombie's feet be inside 64px.
+      if(toZombie.clone().scale(1/centerDistance).dot(normalized)<minDot)continue;
+      const hit=rayHurtboxIntersection(
+        origin,toZombie,PLAYER_CONFIG.meleeRange,zombie.hurtbox,
       );
-      const distance = toZombie.length();
-      if (distance <= 0 || distance > PLAYER_CONFIG.meleeRange) continue;
-      if (toZombie.scale(1 / distance).dot(normalized) < minDot) continue;
-      if (distance < nearestDistance) {
-        nearest = zombie;
-        nearestDistance = distance;
+      if(!hit)continue;
+      const wall=nearestRayHit(origin,toZombie,centerDistance,this.walls);
+      if(wall && wall.distance+0.1 < hit.distance)continue;
+      if(hit.distance<nearestDistance){
+        nearest=zombie;
+        nearestDistance=hit.distance;
       }
     }
     return nearest;

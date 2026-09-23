@@ -10,6 +10,7 @@ import type { CombatController } from "../combat/CombatController";
 import type { WaveController } from "../zombies/WaveController";
 import type { ZombieController } from "../zombies/ZombieController";
 import { resolveDebugShortcut, type DebugAction } from "./debugShortcuts";
+import type { Hurtbox } from "../combat/hurtbox";
 
 export interface DebugSnapshot {
   overlay: boolean;
@@ -24,6 +25,8 @@ export interface DebugSnapshot {
     radius: number;
     isCircle: boolean;
   } | null;
+  playerCombat: Hurtbox;
+  firstZombieCombat: Hurtbox | null;
 }
 
 /**
@@ -86,6 +89,8 @@ export class DebugController {
         radius: body.isCircle ? body.radius : body.halfWidth,
         isCircle: body.isCircle,
       } : null,
+      playerCombat: this.player.hurtbox,
+      firstZombieCombat: this.zombies.getAliveZombies()[0]?.hurtbox ?? null,
     };
   }
 
@@ -102,6 +107,7 @@ export class DebugController {
       this.info.setText(
         "3 RANGES | 4 HITBOXES | 5 +950 | 6 AMMO\n" +
         "7 KILL ALL | 8 NEXT | 9 GOD | 0 HELP\n" +
+        "GREEN/PINK=FEET  LIME/CYAN=VISIBLE HURTBOX\n" +
         "RANGES " + (this.overlayVisible ? "ON" : "OFF") +
         " | HITBOXES " + (this.hitboxesVisible ? "ON" : "OFF") +
         " | GOD " + (this.player.invulnerable ? "ON" : "OFF") +
@@ -206,12 +212,16 @@ export class DebugController {
       );
     }
     this.strokeBody(this.player, 0x39ecb1);
+    const playerBox=this.player.hurtbox;
+    g.lineStyle(2,0xcaff70,.94);
+    g.strokeEllipse(playerBox.centerX,playerBox.centerY,
+      playerBox.radiusX*2,playerBox.radiusY*2);
     for (const zombie of this.zombies.getAliveZombies()) {
       this.strokeBody(zombie, 0xff659f);
-      // Cyan = separate gameplay raycast circle. The difference from
-      // pink Arcade body is deliberately visible for Stage 2 alignment.
-      g.lineStyle(1, 0x7fd5ff, 0.85);
-      g.strokeCircle(zombie.x, zombie.y, zombie.hitRadius);
+      const box=zombie.hurtbox;
+      g.lineStyle(2,0x7fd5ff,.94);
+      g.strokeEllipse(box.centerX,box.centerY,
+        box.radiusX*2,box.radiusY*2);
     }
   }
 
@@ -239,8 +249,9 @@ export class DebugController {
       );
     }
     g.lineStyle(2, 0x7ec2e2, .9);
+    const attackAnchor=this.player.getAimAnchor();
     g.strokeCircle(
-      this.player.x, this.player.y, PLAYER_CONFIG.meleeRange,
+      attackAnchor.x, attackAnchor.y, PLAYER_CONFIG.meleeRange,
     );
     const [vx, vy] = facingVector(this.player.facing);
     const angle = Math.atan2(vy, vx);
@@ -249,14 +260,15 @@ export class DebugController {
     );
     for (const a of [angle - halfArc, angle + halfArc]) {
       g.lineBetween(
-        this.player.x, this.player.y,
-        this.player.x + Math.cos(a) * PLAYER_CONFIG.meleeRange,
-        this.player.y + Math.sin(a) * PLAYER_CONFIG.meleeRange,
+        attackAnchor.x, attackAnchor.y,
+        attackAnchor.x + Math.cos(a) * PLAYER_CONFIG.meleeRange,
+        attackAnchor.y + Math.sin(a) * PLAYER_CONFIG.meleeRange,
       );
     }
     for (const zombie of this.zombies.getAliveZombies()) {
       g.lineStyle(1, 0xc57773, .8);
-      g.strokeCircle(zombie.x, zombie.y, zombie.hitRadius);
+      g.strokeEllipse(zombie.hurtbox.centerX,zombie.hurtbox.centerY,
+        zombie.hurtbox.radiusX*2,zombie.hurtbox.radiusY*2);
       g.lineStyle(1, 0xc57773, .3);
       g.strokeCircle(
         zombie.x, zombie.y, ZOMBIE_CONFIG.attackRange,

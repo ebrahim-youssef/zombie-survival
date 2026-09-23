@@ -1,5 +1,9 @@
+import { ACTOR_HITBOXES } from "../combat/hurtbox";
+
 export const ZOMBIE_CONFIG = {
-  colliderRadius: 11,
+  // Actual Arcade collision radius is shared with the debug overlay
+  // and sourced from ACTOR_HITBOXES.zombie (not the upper-body hurtbox).
+  colliderRadius: ACTOR_HITBOXES.zombie.footRadius,
   attackRange: 38,
   attackDamage: 50,
   attackCooldownMs: 1000,

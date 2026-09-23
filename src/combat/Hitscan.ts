@@ -1,9 +1,10 @@
 import Phaser from "phaser";
 import type { Zombie } from "../entities/Zombie";
+import { rayHurtboxIntersection } from "./hurtbox";
 import type { Segment } from "../utils/geometry";
 import {
   nearestRayHit,
-  rayCircleIntersection,
+  // Damage uses the visible actor's torso, NOT a tiny foot circle.
 } from "../utils/geometry";
 
 export interface HitscanResult {
@@ -46,12 +47,8 @@ export function castHitscan(
   let nearestZombiePoint: Phaser.Math.Vector2 | null = null;
 
   for (const zombie of zombies) {
-    const hit = rayCircleIntersection(
-      origin,
-      normalized,
-      maxDistance,
-      new Phaser.Math.Vector2(zombie.x, zombie.y),
-      zombie.hitRadius,
+    const hit = rayHurtboxIntersection(
+      origin, normalized, maxDistance, zombie.hurtbox,
     );
 
     if (!hit) continue;
@@ -59,7 +56,7 @@ export function castHitscan(
 
     nearestZombie = zombie;
     nearestZombieDistance = hit.distance;
-    nearestZombiePoint = hit.point;
+    nearestZombiePoint = new Phaser.Math.Vector2(hit.point.x,hit.point.y);
   }
 
   if (

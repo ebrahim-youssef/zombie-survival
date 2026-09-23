@@ -1,8 +1,9 @@
 import Phaser from "phaser";
 import {PLAYER_CONFIG} from "../config/player";
 import type {FacingDirection} from "../types/game";
-import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H,CHARACTER_SCALE} from "../art/CharacterArt";
+import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H,CHARACTER_W,CHARACTER_SCALE} from "../art/CharacterArt";
 import {facingFromVector} from "../art/directions";
+import { ACTOR_HITBOXES, actorHurtbox, footBodyOffsets } from "../combat/hurtbox";
 
 const DIAGONAL_COMPONENT=1/Math.sqrt(2);
 type PlayerAction="shoot"|"melee"|"reload"|"hurt";
@@ -24,7 +25,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
     this.setDepth(8+y/100);
     this.setCollideWorldBounds(false);
     // Hitbox remains on the floor/feet, regardless of tall visual sprite.
-    (this.body as Phaser.Physics.Arcade.Body).setCircle(11,37,73);
+    const radius = ACTOR_HITBOXES.player.footRadius;
+    const offsets = footBodyOffsets(
+      CHARACTER_W * CHARACTER_SCALE, CHARACTER_FEET_Y * CHARACTER_SCALE, radius,
+    );
+    (this.body as Phaser.Physics.Arcade.Body).setCircle(radius,offsets.x,offsets.y);
+  }
+  get hurtbox(){return actorHurtbox("player",this);}
+  getAimAnchor():Phaser.Math.Vector2{
+    return new Phaser.Math.Vector2(this.hurtbox.centerX,this.hurtbox.centerY);
   }
   get health():number{return this.currentHealth;}
   get maxHealth():number{return PLAYER_CONFIG.maxHealth;}
@@ -66,7 +75,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
     return before-this.currentHealth;
   }
   faceWorldPoint(point:Phaser.Math.Vector2):void{
-    this.facing=facingFromVector(point.x-this.x,point.y-this.y);
+    const anchor=this.getAimAnchor();
+    this.facing=facingFromVector(point.x-anchor.x,point.y-anchor.y);
   }
   beginAction(action:PlayerAction,now:number):void{
     if(this.isDead)return;
@@ -98,10 +108,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
       this.y-24+unit.y*19,
     );
   }
+  /** Gameplay and visual tracers must originate at the same barrel tip. */
   getMuzzlePosition(direction:Phaser.Math.Vector2):Phaser.Math.Vector2{
-    const normal=direction.clone();
-    if(normal.lengthSq()===0)normal.set(1,0);
-    else normal.normalize();
-    return new Phaser.Math.Vector2(this.x,this.y).add(normal.scale(22));
+    return this.getVisibleMuzzlePosition(direction);
   }
 }

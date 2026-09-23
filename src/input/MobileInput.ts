@@ -81,22 +81,25 @@ export class MobileInput implements InputSource{
     const settings=this.scene.registry.get("gameSettings") as GameSettings|undefined;
     const mode:MobileAimMode=settings?.mobileAimMode??DEFAULT_SETTINGS.mobileAimMode;
     const stickFiring=this.aimStick.engaged&&mode==="stick-auto-fire";
-    const wantsAssist=this.aimStick.engaged;
+    const wantsAssist=this.aimStick.engaged && mode!=="manual";
     const best=this.selectTarget(
       wantsAssist?this.facing:null,
       wantsAssist?ASSIST_CONE_HALF_DEGREES:180,
       mode==="auto-aim"||wantsAssist,
     );
     if(best && (mode==="auto-aim"||wantsAssist)){
-      this.aim.set(best.x,best.y);
+      const target=best.getAimPoint();
+      this.aim.copy(target);
       // Auto-aim mode updates facing when a zombie is acquired.
       if(mode==="auto-aim"&&!wantsAssist){
-        this.facing.set(best.x-this.player.x,best.y-this.player.y).normalize();
+        const anchor=this.player.getAimAnchor();
+        this.facing.set(target.x-anchor.x,target.y-anchor.y).normalize();
       }
     }else{
+      const anchor=this.player.getAimAnchor();
       this.aim.set(
-        this.player.x+this.facing.x*500,
-        this.player.y+this.facing.y*500,
+        anchor.x+this.facing.x*500,
+        anchor.y+this.facing.y*500,
       );
     }
     const frame:InputFrame={
@@ -282,16 +285,26 @@ export class MobileInput implements InputSource{
     enabled:boolean,
   ):Zombie|null{
     if(!enabled)return null;
-    const origin=new Phaser.Math.Vector2(this.player.x,this.player.y);
-    return nearestAimTarget(
-      origin,this.getZombies(),direction,TARGET_RANGE,halfCone,
-      (zombie)=>{
-        const toTarget=new Phaser.Math.Vector2(zombie.x-origin.x,zombie.y-origin.y);
-        const distance=toTarget.length();
+    const origin=this.player.getAimAnchor();
+    const targets=this.getZombies().filter(z=>!z.isDead).map(zombie=>({
+      x:zombie.hurtbox.centerX,
+      y:zombie.hurtbox.centerY,
+      zombie,
+    }));
+    const chosen=nearestAimTarget(
+      origin,targets,direction,TARGET_RANGE,halfCone,
+      (target)=>{
+        const targetPoint=new Phaser.Math.Vector2(target.x,target.y);
+        const muzzle=this.player.getMuzzlePosition(
+          targetPoint.clone().subtract(origin),
+        );
+        const ray=targetPoint.clone().subtract(muzzle);
+        const distance=ray.length();
         if(distance<1)return true;
-        const hit=nearestRayHit(origin,toTarget,distance,this.arena.wallSegments);
-        return !hit||hit.distance>=distance-zombie.hitRadius;
+        const hit=nearestRayHit(muzzle,ray,distance,this.arena.wallSegments);
+        return !hit||hit.distance>=distance-1;
       },
     );
+    return chosen?.zombie??null;
   }
 }

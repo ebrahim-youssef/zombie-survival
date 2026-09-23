@@ -123,3 +123,15 @@ replace the former large block shapes. The cabin, props and HUD stay as-is;
 only the HUD portrait is scaled to fit its existing frame. On every CI run,
 `cabin-art-preview` now contains both a gameplay screenshot and a character
 close-up sheet for visual review.
+
+## Stage 2 — Visual hitbox alignment
+
+Movement uses small centered circular foot colliders (radius 14), while
+guns and melee use an upper-body ellipse aligned with the character's
+64px raster displayed at 1.5×. The mobile auto-aim and barrel origin
+now agree with the same combat geometry.
+
+In a QA session press `4`: green/pink = movement circles at the feet,
+lime/cyan = larger body hurtboxes covering the visible head and torso.
+Press `3` to also reveal recent real raycasts. See the Stage 2 tests and
+`docs/08-implementation-plan.md` for numerical dimensions.
