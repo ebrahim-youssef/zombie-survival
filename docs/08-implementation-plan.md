@@ -24,46 +24,38 @@ Status: **complete**
 
 Status: **complete**
 
-- MR6.
-- Kuda.
-- KN-44.
-- KRM-262.
-- BRM.
-- Drakon.
-- typed weapon-definition registry.
-- weapon-specific RPM, ammo, reload, damage, falloff and spread.
-- shotgun 4-pellet hitscan.
-- two-slot inventory.
-- slot 1 starts with MR6.
-- slot 2 starts empty.
-- acquisition fills empty slot before replacing active slot.
-- acquisition equips the new weapon.
-- no duplicate owned weapons.
-- 1/2 switching.
-- mouse-wheel switching.
-- switching cancels reload without refilling.
-- HUD inventory slot state.
-
-KRM reload remains a single full-mag timer in the MVP; per-shell reload can be added later without changing inventory ownership/state boundaries.
-
 ## Phase 6 — Economy/interactions
 
-Status: **next**
+Status: **complete**
 
-- MR6 wall buy.
-- Kuda wall buy.
-- owned-wall-weapon ammo refills.
-- Mystery Box.
-- interaction prompts.
-- insufficient-points feedback.
-- use Phase 5 inventory acquisition API.
+- MR6 bottom-wall interaction.
+- MR6 full acquisition price: 500.
+- MR6 owned-ammo refill: 250.
+- Kuda top-wall interaction.
+- Kuda full acquisition price: 1250.
+- Kuda owned-ammo refill: 625.
+- wall buys use the shared inventory acquisition API.
+- owned ammo cannot be repurchased while already full.
+- Mystery Box cost: 950.
+- pool: Kuda, KN-44, KRM-262, BRM, Drakon.
+- currently owned weapons excluded.
+- equal random selection among remaining candidates.
+- ~3.5-second cycling/reveal.
+- ~10-second pickup timeout.
+- E interaction for purchase/take.
+- nearest interaction wins when ranges overlap.
+- insufficient-points and result feedback.
+- contextual HUD interaction prompt.
 
 ## Phase 7 — UI/audio/persistence
 
-- complete HUD.
-- menus.
+Status: **next**
+
+- complete HUD pass.
+- real pause menu.
+- settings.
 - SFX.
-- local high score/highest round/settings.
+- local high score/highest round/settings persistence.
 
 ## Phase 8 — Mobile input
 

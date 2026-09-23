@@ -34,6 +34,13 @@ export class WeaponController {
     return this.reloadCompleteAt !== null;
   }
 
+  get isFullyStocked(): boolean {
+    return (
+      this.magazineAmmo >= this.definition.magazineSize &&
+      this.reserveAmmo >= this.definition.maxReserveAmmo
+    );
+  }
+
   update(now: number): void {
     if (
       this.reloadCompleteAt !== null &&
@@ -65,18 +72,12 @@ export class WeaponController {
     }
 
     const shotIntervalMs = 60_000 / this.definition.rpm;
-
-    if (now - this.lastShotAt < shotIntervalMs) {
-      return false;
-    }
+    if (now - this.lastShotAt < shotIntervalMs) return false;
 
     this.magazineAmmo -= 1;
     this.lastShotAt = now;
 
-    if (
-      this.magazineAmmo === 0 &&
-      this.reserveAmmo > 0
-    ) {
+    if (this.magazineAmmo === 0 && this.reserveAmmo > 0) {
       this.startReload(now);
     }
 
@@ -86,13 +87,7 @@ export class WeaponController {
   startReload(now: number): boolean {
     if (this.isReloading) return false;
     if (this.reserveAmmo <= 0) return false;
-
-    if (
-      this.magazineAmmo >=
-      this.definition.magazineSize
-    ) {
-      return false;
-    }
+    if (this.magazineAmmo >= this.definition.magazineSize) return false;
 
     const duration =
       this.magazineAmmo === 0
@@ -128,10 +123,7 @@ export class WeaponController {
   private finishReload(): void {
     const needed =
       this.definition.magazineSize - this.magazineAmmo;
-    const transferred = Math.min(
-      needed,
-      this.reserveAmmo,
-    );
+    const transferred = Math.min(needed, this.reserveAmmo);
 
     this.magazineAmmo += transferred;
     this.reserveAmmo -= transferred;

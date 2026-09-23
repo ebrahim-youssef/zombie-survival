@@ -4,24 +4,25 @@ Client-only pseudo-isometric zombie survival game prototype.
 
 ## Current status
 
-**Phase 5 — weapons + inventory**
+**Phase 6 — economy + interactions**
 
 Implemented:
 
 - Vite 8 + TypeScript 7 strict mode.
 - Phaser 3.90 + Arcade Physics.
-- Pseudo-isometric arena and four zombie windows.
+- pseudo-isometric arena and four zombie windows.
 - player movement, independent aim and camera foundation.
 - full wave progression and BO3-inspired round scaling.
-- MR6, Kuda, KN-44, KRM-262, BRM and Drakon definitions.
-- weapon-specific fire cadence, ammo, reload, damage falloff and spread.
-- KRM 4-pellet hitscan.
-- two weapon slots.
-- MR6 starts in slot 1 and slot 2 starts empty.
-- acquisition fills empty slot before replacing equipped slot.
-- 1/2 and mouse-wheel switching.
-- switching cancels reload without refilling.
-- inventory HUD.
+- six weapon definitions and two-slot inventory.
+- weapon switching and shotgun pellet behavior.
+- MR6 wall buy: 500 / refill 250.
+- Kuda wall buy: 1250 / refill 625.
+- Mystery Box: 950.
+- Mystery pool excludes currently owned weapons.
+- Mystery cycling/reveal and 10-second pickup timeout.
+- contextual E prompts.
+- insufficient-points feedback.
+- wall buys and Mystery Box share the same inventory acquisition rules.
 - gun/melee zombie damage, scoring, health/regen and game over.
 - GitHub CI running strict TypeScript + production Vite build.
 
@@ -52,6 +53,6 @@ Production output: `dist/`.
 
 ## Next implementation slice
 
-**Phase 6 — economy + interactions:** MR6/Kuda wall buys, half-price owned-weapon ammo refills, Mystery Box, interaction prompts and insufficient-points feedback.
+**Phase 7 — UI/audio/persistence:** proper pause/settings flow, HUD pass, SFX hooks, local high score/highest round and settings persistence.
 
 See `docs/08-implementation-plan.md`.

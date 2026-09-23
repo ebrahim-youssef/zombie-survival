@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { CombatController } from "../combat/CombatController";
 import { Player } from "../entities/Player";
 import { RunState } from "../game/RunState";
+import { InteractionController } from "../interactions/InteractionController";
 import { DesktopInput } from "../input/DesktopInput";
 import { Crosshair } from "../ui/Crosshair";
 import { HUD } from "../ui/HUD";
@@ -20,6 +21,7 @@ export class GameScene extends Phaser.Scene {
   private zombies: ZombieController | undefined;
   private waves: WaveController | undefined;
   private combat: CombatController | undefined;
+  private interactions: InteractionController | undefined;
   private runState: RunState | undefined;
   private gameOver = false;
 
@@ -49,6 +51,7 @@ export class GameScene extends Phaser.Scene {
       spawn.y,
     );
     this.runState = new RunState();
+
     this.desktopInput = new DesktopInput(
       this,
       this.cameras.main,
@@ -72,6 +75,13 @@ export class GameScene extends Phaser.Scene {
       this.player,
       this.arena,
       this.zombies,
+      this.runState,
+    );
+
+    this.interactions = new InteractionController(
+      this.player,
+      this.arena,
+      this.combat.inventory,
       this.runState,
     );
 
@@ -106,6 +116,7 @@ export class GameScene extends Phaser.Scene {
       !this.zombies ||
       !this.waves ||
       !this.combat ||
+      !this.interactions ||
       !this.runState
     ) {
       return;
@@ -151,6 +162,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.combat.update(input, time);
+    this.interactions.update(input, time);
 
     for (
       const award of
@@ -166,6 +178,7 @@ export class GameScene extends Phaser.Scene {
     if (
       !this.player ||
       !this.combat ||
+      !this.interactions ||
       !this.hud ||
       !this.runState ||
       !this.waves
@@ -189,6 +202,10 @@ export class GameScene extends Phaser.Scene {
 
     this.hud.updateWave(
       this.waves.snapshot(now),
+    );
+
+    this.hud.updateInteraction(
+      this.interactions.snapshot(),
     );
   }
 
@@ -238,6 +255,7 @@ export class GameScene extends Phaser.Scene {
     this.desktopInput?.destroy();
     this.crosshair?.destroy();
     this.hud?.destroy();
+    this.interactions?.destroy();
     this.combat?.destroy();
     this.zombies?.destroy();
     this.cameraController?.destroy();
@@ -248,6 +266,7 @@ export class GameScene extends Phaser.Scene {
     this.desktopInput = undefined;
     this.crosshair = undefined;
     this.hud = undefined;
+    this.interactions = undefined;
     this.combat = undefined;
     this.waves = undefined;
     this.zombies = undefined;

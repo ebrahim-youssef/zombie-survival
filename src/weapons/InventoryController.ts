@@ -21,10 +21,7 @@ export class InventoryController {
   private readonly slots: [
     WeaponController | null,
     WeaponController | null,
-  ] = [
-    new WeaponController(MR6),
-    null,
-  ];
+  ] = [new WeaponController(MR6), null];
 
   private activeSlot: 0 | 1 = 0;
 
@@ -45,21 +42,21 @@ export class InventoryController {
   }
 
   owns(id: WeaponId): boolean {
-    return this.slots.some(
-      (weapon) => weapon?.definition.id === id,
-    );
+    return this.findOwned(id) !== null;
   }
 
   getOwnedWeaponIds(): WeaponId[] {
     const ids: WeaponId[] = [];
 
     for (const weapon of this.slots) {
-      if (weapon) {
-        ids.push(weapon.definition.id);
-      }
+      if (weapon) ids.push(weapon.definition.id);
     }
 
     return ids;
+  }
+
+  getOwnedWeapon(id: WeaponId): WeaponController | null {
+    return this.findOwned(id);
   }
 
   acquire(id: WeaponId): AcquireResult {
@@ -69,10 +66,7 @@ export class InventoryController {
 
     if (existingIndex === 0 || existingIndex === 1) {
       this.switchTo(existingIndex);
-      return {
-        kind: "already-owned",
-        slot: existingIndex,
-      };
+      return { kind: "already-owned", slot: existingIndex };
     }
 
     const emptyIndex = this.slots.findIndex(
@@ -84,8 +78,7 @@ export class InventoryController {
         ? emptyIndex
         : this.activeSlot;
 
-    const replacedExisting =
-      this.slots[targetSlot] !== null;
+    const replacedExisting = this.slots[targetSlot] !== null;
 
     this.slots[this.activeSlot]?.cancelReload();
 
@@ -98,9 +91,7 @@ export class InventoryController {
     this.activeSlot = targetSlot;
 
     return {
-      kind: replacedExisting
-        ? "replaced-active"
-        : "filled-empty",
+      kind: replacedExisting ? "replaced-active" : "filled-empty",
       slot: targetSlot,
     };
   }
@@ -108,9 +99,7 @@ export class InventoryController {
   switchTo(slot: 0 | 1): boolean {
     const target = this.slots[slot];
 
-    if (!target || slot === this.activeSlot) {
-      return false;
-    }
+    if (!target || slot === this.activeSlot) return false;
 
     this.activeWeapon.cancelReload();
     this.activeSlot = slot;
@@ -118,24 +107,20 @@ export class InventoryController {
   }
 
   switchToDisplaySlot(slot: 1 | 2): boolean {
-    return this.switchTo(slot - 1 as 0 | 1);
+    return this.switchTo((slot - 1) as 0 | 1);
   }
 
   cycle(direction: -1 | 0 | 1): boolean {
     if (direction === 0) return false;
 
-    const otherSlot: 0 | 1 =
-      this.activeSlot === 0 ? 1 : 0;
-
+    const otherSlot: 0 | 1 = this.activeSlot === 0 ? 1 : 0;
     return this.switchTo(otherSlot);
   }
 
   refillOwned(id: WeaponId): boolean {
-    const weapon = this.slots.find(
-      (candidate) => candidate?.definition.id === id,
-    );
+    const weapon = this.findOwned(id);
 
-    if (!weapon) return false;
+    if (!weapon || weapon.isFullyStocked) return false;
 
     weapon.refill();
     return true;
@@ -145,10 +130,7 @@ export class InventoryController {
     InventorySlotSnapshot,
     InventorySlotSnapshot,
   ] {
-    return [
-      this.slotSnapshot(0),
-      this.slotSnapshot(1),
-    ];
+    return [this.slotSnapshot(0), this.slotSnapshot(1)];
   }
 
   destroy(): void {
@@ -157,9 +139,15 @@ export class InventoryController {
     }
   }
 
-  private slotSnapshot(
-    slot: 0 | 1,
-  ): InventorySlotSnapshot {
+  private findOwned(id: WeaponId): WeaponController | null {
+    return (
+      this.slots.find(
+        (weapon) => weapon?.definition.id === id,
+      ) ?? null
+    );
+  }
+
+  private slotSnapshot(slot: 0 | 1): InventorySlotSnapshot {
     const weapon = this.slots[slot];
 
     return {

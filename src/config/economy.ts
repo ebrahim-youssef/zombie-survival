@@ -7,7 +7,13 @@ export const ECONOMY_CONFIG = {
   },
   mysteryBoxPrice: 950,
   wallBuys: {
-    mr6: 500,
-    kuda: 1250,
+    mr6: { weaponPrice: 500, refillPrice: 250 },
+    kuda: { weaponPrice: 1250, refillPrice: 625 },
+  },
+  mysteryBox: {
+    cycleDurationMs: 3500,
+    cycleLabelIntervalMs: 150,
+    pickupTimeoutMs: 10000,
+    feedbackDurationMs: 1600,
   },
 } as const;
