@@ -17,6 +17,9 @@ export class DesktopInput implements InputSource {
   private readonly slot1: Phaser.Input.Keyboard.Key;
   private readonly slot2: Phaser.Input.Keyboard.Key;
   private readonly escape: Phaser.Input.Keyboard.Key;
+  private readonly moveVector = new Phaser.Math.Vector2();
+  private readonly aimWorld = new Phaser.Math.Vector2();
+
   private previousLeftDown = false;
   private previousRightDown = false;
   private wheelDelta = 0;
@@ -45,20 +48,15 @@ export class DesktopInput implements InputSource {
     this.slot2 = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.escape = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
-    scene.input.on(
-      Phaser.Input.Events.POINTER_WHEEL,
-      this.onWheel,
-      this,
-    );
+    scene.input.on(Phaser.Input.Events.POINTER_WHEEL, this.onWheel, this);
   }
 
   read(): InputFrame {
     const pointer = this.scene.input.activePointer;
     const leftDown = pointer.leftButtonDown();
     const rightDown = pointer.rightButtonDown();
-    const aimWorld = pointer.positionToCamera(
-      this.camera,
-    ) as Phaser.Math.Vector2;
+
+    pointer.positionToCamera(this.camera, this.aimWorld);
 
     const moveX =
       Number(this.movement.d.isDown || this.cursors.right.isDown) -
@@ -68,9 +66,11 @@ export class DesktopInput implements InputSource {
       Number(this.movement.s.isDown || this.cursors.down.isDown) -
       Number(this.movement.w.isDown || this.cursors.up.isDown);
 
+    this.moveVector.set(moveX, moveY);
+
     const frame: InputFrame = {
-      move: new Phaser.Math.Vector2(moveX, moveY),
-      aimWorld: new Phaser.Math.Vector2(aimWorld.x, aimWorld.y),
+      move: this.moveVector,
+      aimWorld: this.aimWorld,
       fireHeld: leftDown,
       firePressed: leftDown && !this.previousLeftDown,
       meleePressed: rightDown && !this.previousRightDown,
@@ -92,16 +92,12 @@ export class DesktopInput implements InputSource {
   }
 
   destroy(): void {
-    this.scene.input.off(
-      Phaser.Input.Events.POINTER_WHEEL,
-      this.onWheel,
-      this,
-    );
+    this.scene.input.off(Phaser.Input.Events.POINTER_WHEEL, this.onWheel, this);
   }
 
   private onWheel(
     _pointer: Phaser.Input.Pointer,
-    _gameObjects: Phaser.GameObjects.GameObject[],
+    _currentlyOver: Phaser.GameObjects.GameObject[],
     _deltaX: number,
     deltaY: number,
   ): void {

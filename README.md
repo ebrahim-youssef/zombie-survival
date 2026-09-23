@@ -13,7 +13,6 @@ Current scaffold includes:
 - Phaser 3.90.
 - Arcade Physics configuration.
 - Responsive 1280×720 logical canvas.
-- Boot, Menu, Game and UI scenes.
 - Pseudo-isometric arena with four centered zombie windows.
 - Player entity with Arcade Physics body.
 - WASD + arrow movement.
@@ -23,10 +22,14 @@ Current scaffold includes:
 - Custom crosshair.
 - Camera follow/bounds foundation.
 - Player confinement across the room perimeter.
-- Core player/economy/wave configuration.
 - BO3-inspired zombie health/count functions.
 - Device-neutral input contract.
 - Full MVP planning/specification pack.
+- GitHub CI for strict TypeScript + production Vite builds.
+
+## Runtime
+
+Node is pinned with `.node-version` to a Vite-8-compatible Node 22 release.
 
 ## Run locally
 
@@ -47,21 +50,19 @@ Production build:
 npm run build
 ```
 
-## Current Phase 1 slice
+The production output directory is `dist/`.
 
-Implemented:
+## Cloudflare
 
-1. Pseudo-isometric diamond arena geometry.
-2. Four centered window entrances and outside spawn markers.
-3. Player entity with Arcade Physics body.
-4. WASD/arrow movement.
-5. Deliberate 1.25× diagonal movement magnitude.
-6. Independent mouse aiming.
-7. Eight snapped visual facing directions.
-8. Custom world-space crosshair.
-9. Camera follow/bounds foundation.
-10. Player confinement across the full arena perimeter, including zombie-only window gaps.
+Use:
 
-Next: **Phase 2 — combat foundation (MR6, hitscan, tracer, ammo/reload and melee).**
+- Build command: `npm run build`
+- Build output directory: `dist`
+
+The Vite config intentionally contains an explicit `plugins: []` array because Cloudflare's Vite integration may inspect or augment that array during deployment.
+
+## Next implementation slice
+
+**Phase 2 — combat foundation:** MR6, semi-auto firing, hitscan collision, tracer, muzzle flash, ammo/reload and melee.
 
 See `docs/08-implementation-plan.md`.
