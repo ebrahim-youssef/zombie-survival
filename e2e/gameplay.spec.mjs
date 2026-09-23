@@ -11,6 +11,7 @@ test("desktop: gameplay starts and Enter reliably restarts from game over",async
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("game"));
   await page.evaluate(()=>window.__zombieSmoke.forceGameOver());
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("gameOver"));
+  await expect(page.getByRole("button",{name:"RESTART"})).toBeVisible();
   await page.keyboard.press("Enter");
   await page.waitForFunction(()=>
     window.__zombieSmoke?.isActive("game")&&
@@ -44,14 +45,15 @@ test("mobile landscape: canvas fills viewport and touch restart/main menu work",
   expect(await page.evaluate(()=>window.__zombieSmoke.touchMode())).toBe(true);
   await page.evaluate(()=>window.__zombieSmoke.forceGameOver());
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("gameOver"));
-  await page.mouse.click(width/2,height/2+18);
+  await expect(page.getByRole("button",{name:"RESTART"})).toBeVisible();
+  await page.getByRole("button",{name:"RESTART"}).tap();
   await page.waitForFunction(()=>
     window.__zombieSmoke?.isActive("game")&&
     !window.__zombieSmoke?.isActive("gameOver"),
   );
   await page.evaluate(()=>window.__zombieSmoke.forceGameOver());
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("gameOver"));
-  await page.mouse.click(width/2,height/2+58);
+  await page.getByRole("button",{name:"MAIN MENU"}).tap();
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("menu"));
   expect(errors).toEqual([]);
   await context.close();

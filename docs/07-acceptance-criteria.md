@@ -83,3 +83,42 @@
 
 - [ ] Target 60 FPS on modest desktop hardware.
 - [ ] No unbounded corpse/tracer/entity accumulation.
+
+## Phase 9B device-acceptance regression checklist
+
+Automated CI includes pure mobile targeting/layout tests, unit tests and
+Chromium smoke tests. Manual checks below must be observed rather than
+inferred from successful compilation.
+
+### Desktop browsers
+- [ ] Open the game, start and survive a few rounds.
+- [ ] Restart using Enter, Space, and the button after losing.
+- [ ] Main Menu button after losing works; no underlying gameplay click.
+- [ ] Esc pause/resume retains the active wave and ammo countdown.
+- [ ] Walking, shooting, melee and death use whole-body 8-way sprites;
+      no overhead rotating block on turning.
+- [ ] Visual feet align with zombie hitboxes and shadow.
+
+### Android landscape and portrait
+- [ ] Canvas occupies the usable visible viewport (no 16:9 letterbox).
+- [ ] Browser toolbar hide/show and device rotation do not create blank bands.
+- [ ] Canvas remains within safe areas/notch.
+- [ ] Menus, HUD, joysticks and buttons remain reachable and do not overlap
+      each other at actual device dimensions.
+- [ ] Left stick movement + right stick aim and auto-fire work simultaneously.
+- [ ] Right-stick release stops firing; ammo and rate limits remain correct.
+- [ ] The assist respects the forward cone and does not aim through walls.
+- [ ] Auto-aim + FIRE and manual mode work after changing Settings.
+- [ ] Game-over restart and main-menu buttons respond to direct touch.
+
+### iPhone Safari
+- [ ] Reproduce all of the mobile checks above on Safari.
+- [ ] Test Safari address-bar collapse/expand; verify no stale canvas sizing.
+- [ ] Test home-indicator and notch safe-area padding.
+- [ ] Verify background/foreground and focus loss release held virtual input.
+
+### Performance/art
+- [ ] Average gameplay is sufficiently smooth on a modest mobile device.
+- [ ] No noticeable per-round buildup of zombie corpses/effects.
+- [ ] Review the 48×64 angled procedural preview on real screens; replace
+      with final artist-authored sprites before claiming final production art.

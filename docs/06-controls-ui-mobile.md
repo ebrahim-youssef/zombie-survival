@@ -81,3 +81,32 @@ Recommended layout:
 - pause.
 
 Respect safe areas and prevent browser scrolling/zoom gestures during gameplay where possible.
+
+## Responsive gameplay (Phase 9B)
+
+Phaser uses `Scale.RESIZE` to fill the actual safe-area-adjusted browser
+viewport rather than preserving a 1280×720 FIT rectangle. The world camera
+has its own mobile zoom and follow bounds; the HUD, menus and virtual
+controls are screen-space and relayout on resize/orientation changes.
+
+On touch-first devices, the selected mobile control mode is persisted:
+
+| Mode | Aim | Fire |
+|---|---|---|
+| Stick auto-fire + assist (default) | Right stick, snaps to closest visible zombie inside a narrow forward cone | Automatically while stick is deflected; semi-autos repeat respecting RPM |
+| Auto-aim + button | Nearest visible zombie within range | FIRE button |
+| Manual | Right stick | FIRE button |
+
+Auto-aim never targets dead zombies or targets blocked by the arena wall
+segments. Releasing the right stick in default mode stops auto-firing.
+Left-stick movement is always independent of aim.
+
+Portrait is supported without 16:9 letterboxing; landscape is recommended
+because it affords more room for the action buttons.
+
+## Game-over interactions
+
+Game-over UI lives in an independent topmost Scene while gameplay is
+paused, so the mobile joystick and in-game controls cannot steal taps.
+Restart and Main Menu are large interactive buttons. Enter/Space restart
+and Esc returns to the menu on desktop.
