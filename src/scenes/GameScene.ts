@@ -220,7 +220,10 @@ export class GameScene extends Phaser.Scene {
     this.hud?.destroy();
     this.interactions?.destroy();
     this.combat?.destroy();
-    this.zombies?.destroy();
+    // Phaser's Arcade Physics plugin already destroys its Groups and
+    // Colliders before custom Scene SHUTDOWN listeners run. Destroying the
+    // group again here throws (Group.children is already undefined) and
+    // prevents Game Over -> Restart from creating the next GameScene.
     this.cameraController?.destroy();
     this.arena?.destroy();
     this.audio?.destroy();

@@ -64,8 +64,12 @@ export class ZombieController {
     this.group.clear(true, true);
   }
 
+  /**
+   * Physics Group and Collider lifetimes belong to Phaser Scene shutdown.
+   * Do not clear this Group from another SHUTDOWN callback: the framework
+   * may already have destroyed its underlying child Set.
+   */
   destroy(): void {
-    this.selfCollider.destroy();
-    this.clearAll();
+    // Intentionally no-op during Scene shutdown.
   }
 }
