@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import {PLAYER_CONFIG} from "../config/player";
 import type {FacingDirection} from "../types/game";
-import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H} from "../art/CharacterArt";
+import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H,CHARACTER_SCALE} from "../art/CharacterArt";
 import {facingFromVector} from "../art/directions";
 
 const DIAGONAL_COMPONENT=1/Math.sqrt(2);
@@ -20,10 +20,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setOrigin(.5,CHARACTER_FEET_Y/CHARACTER_H);
+    this.setScale(CHARACTER_SCALE);
     this.setDepth(8+y/100);
     this.setCollideWorldBounds(false);
     // Hitbox remains on the floor/feet, regardless of tall visual sprite.
-    (this.body as Phaser.Physics.Arcade.Body).setCircle(11,13,45);
+    (this.body as Phaser.Physics.Arcade.Body).setCircle(11,21,45);
   }
   get health():number{return this.currentHealth;}
   get maxHealth():number{return PLAYER_CONFIG.maxHealth;}

@@ -117,6 +117,7 @@ export class CombatController {
     const result = zombie.takeDamage(PLAYER_CONFIG.meleeDamage);
     if (!result.applied) return;
 
+    this.effects.showImpact(new Phaser.Math.Vector2(zombie.x, zombie.y), result.killed);
     this.effects.showDamageNumber(
       new Phaser.Math.Vector2(zombie.x, zombie.y),
       PLAYER_CONFIG.meleeDamage,
@@ -139,6 +140,7 @@ export class CombatController {
     }
 
     for (const [zombie, outcome] of ledger.entries()) {
+      this.effects.showImpact(new Phaser.Math.Vector2(zombie.x, zombie.y), outcome.killed);
       this.effects.showDamageNumber(
         new Phaser.Math.Vector2(zombie.x, zombie.y),
         outcome.damage,

@@ -127,3 +127,22 @@ than being inferred from headless Chromium.
 - [ ] No noticeable per-round buildup of zombie corpses/effects.
 - [ ] Review the 48×64 angled procedural preview on real screens; replace
       with final artist-authored sprites before claiming final production art.
+
+### Arcade visual regression / acceptance
+
+Automated:
+- [ ] `CharacterArt` exports 32 × 32 source frames at 2× display.
+- [ ] Eight directional idle/walk and combat textures exist.
+- [ ] Environment textures (lantern, barrel, shelf, rug, chest, wall
+      signs, debris) register at scene start without browser errors.
+- [ ] New HUD portrait and hearts register at scene start.
+- [ ] Existing restart and mobile input smoke tests remain green.
+
+Manual desktop and physical-device visual review:
+- [ ] Readable whole-body survivor and green zombies at actual screen size.
+- [ ] Broken windows still coincide with zombie spawn/entry points.
+- [ ] Gun tracers, impact bursts and hitboxes still align after art change.
+- [ ] Warm wooden arena dominates view, blue exterior remains distinct.
+- [ ] Chest and buy markers are visually distinguishable and interactive.
+- [ ] HUD panels leave room for all mobile controls; prompts remain visible.
+- [ ] Underlying mechanics, wave scaling and wall-hit geometry unchanged.

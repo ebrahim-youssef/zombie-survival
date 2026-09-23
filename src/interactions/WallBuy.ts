@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { ENV_TEXTURES, ensureEnvironmentArt } from "../art/EnvironmentArt";
 import type { RunState } from "../game/RunState";
 import type { InventoryController } from "../weapons/InventoryController";
 import {
@@ -12,7 +13,7 @@ export interface WallBuyPrices {
 }
 
 export class WallBuy {
-  private readonly marker: Phaser.GameObjects.Rectangle;
+  private readonly marker: Phaser.GameObjects.Image;
   private readonly label: Phaser.GameObjects.Text;
 
   constructor(
@@ -25,23 +26,18 @@ export class WallBuy {
   ) {
     const weapon = getWeaponDefinition(weaponId);
 
-    this.marker = scene.add
-      .rectangle(
-        position.x,
-        position.y,
-        92,
-        34,
-        0x303329,
-        1,
-      )
-      .setStrokeStyle(2, 0xd6ad55, 0.9)
-      .setDepth(3);
+    ensureEnvironmentArt(scene);
+    const depth = 8 + position.y / 100;
+    this.marker = scene.add.image(
+      position.x, position.y,
+      weaponId === "mr6" ? ENV_TEXTURES.wallBuyMr6 : ENV_TEXTURES.wallBuyKuda,
+    ).setScale(1.05).setDepth(depth);
 
     this.label = scene.add
       .text(
         position.x,
-        position.y,
-        weapon.name,
+        position.y + 28,
+        weapon.name + "  " + prices.weaponPrice,
         {
           fontFamily: "monospace",
           fontSize: "13px",
@@ -49,7 +45,7 @@ export class WallBuy {
         },
       )
       .setOrigin(0.5)
-      .setDepth(4);
+      .setDepth(8 + position.y / 100 + .2);
   }
 
   getPrompt(): string {

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { ENV_TEXTURES, ensureEnvironmentArt } from "../art/EnvironmentArt";
 import { ECONOMY_CONFIG } from "../config/economy";
 import type { RunState } from "../game/RunState";
 import type { InventoryController } from "../weapons/InventoryController";
@@ -26,7 +27,9 @@ export class MysteryBox {
   private pickupExpiresAt = 0;
   private result: WeaponId | null = null;
 
-  private readonly marker: Phaser.GameObjects.Rectangle;
+  private readonly marker: Phaser.GameObjects.Image;
+  private readonly question: Phaser.GameObjects.Text;
+  private readonly halo: Phaser.GameObjects.Ellipse;
   private readonly label: Phaser.GameObjects.Text;
 
   constructor(
@@ -35,31 +38,28 @@ export class MysteryBox {
     private readonly inventory: InventoryController,
     private readonly runState: RunState,
   ) {
-    this.marker = scene.add
-      .rectangle(
-        position.x,
-        position.y,
-        72,
-        42,
-        0x4f3822,
-        1,
-      )
-      .setStrokeStyle(3, 0xd6ad55, 0.9)
-      .setDepth(3);
-
-    this.label = scene.add
-      .text(
-        position.x,
-        position.y,
-        "BOX",
-        {
-          fontFamily: "monospace",
-          fontSize: "14px",
-          color: "#f0d27a",
-        },
-      )
-      .setOrigin(0.5)
-      .setDepth(4);
+    ensureEnvironmentArt(scene);
+    const depth = 8 + position.y / 100;
+    this.halo = scene.add.ellipse(
+      position.x, position.y + 8, 130, 48, 0xf4b53f, .18,
+    ).setDepth(depth - .3);
+    this.marker = scene.add.image(
+      position.x, position.y + 8, ENV_TEXTURES.chest,
+    ).setOrigin(.5, .83).setScale(1.3).setDepth(depth);
+    this.question = scene.add.text(
+      position.x, position.y - 17, "?", {
+        fontFamily: "monospace", fontSize: "30px",
+        fontStyle: "bold", color: "#fff0aa",
+        stroke: "#9b641d", strokeThickness: 3,
+      },
+    ).setOrigin(.5).setDepth(depth + .2);
+    this.label = scene.add.text(
+      position.x, position.y - 63, "", {
+        fontFamily: "monospace", fontSize: "13px",
+        color: "#ffe09a", backgroundColor: "#2b221bd9",
+        padding: { x: 5, y: 3 },
+      },
+    ).setOrigin(.5).setDepth(depth + .3).setVisible(false);
   }
 
   update(now: number): void {
@@ -131,13 +131,16 @@ export class MysteryBox {
     this.cycleEndsAt =
       now + ECONOMY_CONFIG.mysteryBox.cycleDurationMs;
 
-    this.marker.setFillStyle(0x6a4c27, 1);
+    this.marker.setTint(0xffdd92);
+    this.label.setVisible(true);
 
     return "Mystery Box rolling...";
   }
 
   destroy(): void {
     this.marker.destroy();
+    this.question.destroy();
+    this.halo.destroy();
     this.label.destroy();
   }
 
@@ -155,7 +158,9 @@ export class MysteryBox {
     this.pickupExpiresAt =
       now + ECONOMY_CONFIG.mysteryBox.pickupTimeoutMs;
 
-    this.marker.setFillStyle(0x80611f, 1);
+    this.marker.clearTint();
+    this.question.setText("!");
+    this.label.setVisible(true);
     this.label.setText(
       getWeaponDefinition(this.result).name,
     );
@@ -206,7 +211,9 @@ export class MysteryBox {
     this.result = null;
     this.cycleEndsAt = 0;
     this.pickupExpiresAt = 0;
-    this.marker.setFillStyle(0x4f3822, 1);
+    this.marker.clearTint();
+    this.question.setText("?");
+    this.label.setVisible(false);
     this.label.setText("BOX");
   }
 }

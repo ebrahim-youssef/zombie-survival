@@ -19,6 +19,20 @@ if(import.meta.env.DEV && new URLSearchParams(location.search).has("smoke")){
         (game.scene.getScene("game") as GameScene).debugAmmo(),
       touchMode:():boolean=>
         (game.scene.getScene("game") as GameScene).debugUsesTouch(),
+      artState:()=>{
+        const dimensions=(key:string):{width:number;height:number}=>{
+          const image=game.textures.get(key).getSourceImage() as HTMLCanvasElement;
+          return {width:image.width,height:image.height};
+        };
+        return {
+          player:dimensions("character-player-s-idle-0"),
+          zombie:dimensions("character-zombie-s-walk-0"),
+          chest:dimensions("cabin:mystery-chest"),
+          lantern:dimensions("cabin:lantern"),
+          heart:dimensions("hud:heart"),
+          shelf:dimensions("cabin:shelf"),
+        };
+      },
       forceGameOver:():void=>
         (game.scene.getScene("game") as GameScene).debugForceGameOver(),
     },

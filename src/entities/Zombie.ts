@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import {ZOMBIE_CONFIG} from "../config/zombie";
-import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H} from "../art/CharacterArt";
+import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H,CHARACTER_SCALE} from "../art/CharacterArt";
 import {facingFromVector} from "../art/directions";
 import type {FacingDirection} from "../types/game";
 import type {Player} from "./Player";
@@ -29,9 +29,10 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite{
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setOrigin(.5,CHARACTER_FEET_Y/CHARACTER_H);
+    this.setScale(CHARACTER_SCALE);
     this.setDepth(8+y/100);
     (this.body as Phaser.Physics.Arcade.Body).setCircle(
-      ZOMBIE_CONFIG.colliderRadius,13,45,
+      ZOMBIE_CONFIG.colliderRadius,21,45,
     );
     (this.body as Phaser.Physics.Arcade.Body).setBounce(0);
   }

@@ -67,3 +67,25 @@ outstanding; see `docs/08-implementation-plan.md`.
   animations for eight facings replace the old rotating top-down blocks.
 - No copied Zelda or Call of Duty artwork is used.
 - Physical mobile device/visual acceptance remains necessary.
+
+## Arcade cabin art pass
+
+The game now produces original 32 × 32 low-resolution player/zombie frames
+at a crisp 2× world display scale, preserving the feet-based collision
+layout and all eight movement/aim facings. This is an original visual
+interpretation of the approved arcade-zombie screenshot, not copied
+commercial sprite art.
+
+The arena's grey diamond grid has been redrawn as warm plank flooring,
+timber cabin walls, four shattered windows, moonlit blue exterior,
+bookshelves, lanterns, barrels, crates, carpet, and aged wall décor.
+Wall purchases have stencilled gun plates; the Mystery Box is now a
+glowing illustrated chest. The HUD has a portrait, pixel hearts, an
+amber score, red-round presentation, and an illustrated ammo panel.
+
+No image-generation service or runtime network dependency is needed:
+original pixel textures are generated deterministically in
+`src/art/CharacterArt.ts`, `EnvironmentArt.ts`, and `HudArt.ts`.
+The provided screenshot is **a visual target**; the interactive map
+still uses the agreed four-window arena geometry rather than being a
+one-to-one recreation of the reference room.
