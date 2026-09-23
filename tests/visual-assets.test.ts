@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   characterFrameCount, CHARACTER_W, CHARACTER_H, CHARACTER_SCALE,
 } from "../src/art/CharacterArt";
-import { ENV_TEXTURES, CABIN_PALETTE } from "../src/art/EnvironmentArt";
-import { HUD_TEXTURES } from "../src/art/HudArt";
+import { ENV_TEXTURES, CABIN_PALETTE, HUD_TEXTURES } from "../src/art/ArtManifest";
+
 
 describe("original arcade art contracts",()=>{
   it("uses chunky native 32x32 character frames with 2x nearest-neighbour display",()=>{

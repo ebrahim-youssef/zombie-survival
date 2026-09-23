@@ -1,11 +1,8 @@
 import Phaser from "phaser";
+import { HUD_TEXTURES } from "./ArtManifest";
+export { HUD_TEXTURES } from "./ArtManifest";
 
-export const HUD_TEXTURES = {
-  heart: "hud:heart",
-  heartEmpty: "hud:heart-empty",
-  gun: "hud:gun",
-  portraitFrame: "hud:portrait-frame",
-} as const;
+
 
 /** Compact, pixel-snapped HUD pieces matching the cabin's arcade palette. */
 export function ensureHudArt(scene: Phaser.Scene): void {

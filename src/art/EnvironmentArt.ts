@@ -1,30 +1,11 @@
 import Phaser from "phaser";
+import { CABIN_PALETTE, ENV_TEXTURES } from "./ArtManifest";
+export { CABIN_PALETTE, ENV_TEXTURES } from "./ArtManifest";
 
 /** Original hand-defined pixel textures generated once and shared by props. */
-export const CABIN_PALETTE = {
-  night: 0x08182b,
-  nightBlue: 0x183557,
-  plank: 0x84512f,
-  plankLight: 0xae7141,
-  plankDark: 0x4b2e28,
-  frame: 0x3b241f,
-  gold: 0xf5b740,
-  cream: 0xffe6a0,
-  blood: 0x9b3033,
-} as const;
 
-export const ENV_TEXTURES = {
-  lantern: "cabin:lantern",
-  barrel: "cabin:barrel",
-  shelf: "cabin:shelf",
-  rug: "cabin:rug",
-  chest: "cabin:mystery-chest",
-  wallBuyMr6: "cabin:wall-mr6",
-  wallBuyKuda: "cabin:wall-kuda",
-  debris: "cabin:debris",
-  crate: "cabin:crate",
-  sign: "cabin:poster",
-} as const;
+
+
 
 type Canvas = Phaser.GameObjects.Graphics;
 function rect(g: Canvas, color: number, x: number, y: number, w: number, h: number): void {
