@@ -11,6 +11,8 @@ if(import.meta.env.DEV && new URLSearchParams(location.search).has("smoke")){
       viewport:():{width:number;height:number}=>({
         width:game.scale.width,height:game.scale.height,
       }),
+      ammo:():number=>
+        (game.scene.getScene("game") as GameScene).debugAmmo(),
       touchMode:():boolean=>
         (game.scene.getScene("game") as GameScene).debugUsesTouch(),
       forceGameOver:():void=>

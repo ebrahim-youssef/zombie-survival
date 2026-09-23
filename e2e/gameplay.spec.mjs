@@ -55,6 +55,22 @@ test("mobile landscape: canvas fills viewport and touch restart/main menu work",
   await page.mouse.click(width/2,height/2-4);
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("game"));
   expect(await page.evaluate(()=>window.__zombieSmoke.touchMode())).toBe(true);
+
+  // The right stick should aim AND repeatedly fire the MR6 in default mode.
+  const firstAmmo=await page.evaluate(()=>window.__zombieSmoke.ammo());
+  await page.mouse.move(767,312);
+  await page.mouse.down();
+  await page.mouse.move(808,312,{steps:5});
+  await page.waitForTimeout(460);
+  const firedAmmo=await page.evaluate(()=>window.__zombieSmoke.ammo());
+  expect(firedAmmo).toBeLessThan(firstAmmo);
+  await page.mouse.up();
+  // Release must not continue firing, even when the aim direction persists.
+  await page.waitForTimeout(60);
+  const releasedAmmo=await page.evaluate(()=>window.__zombieSmoke.ammo());
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(()=>window.__zombieSmoke.ammo())).toBe(releasedAmmo);
+
   await page.evaluate(()=>window.__zombieSmoke.forceGameOver());
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("gameOver"));
   await expect(page.getByRole("button",{name:"RESTART"})).toBeVisible();
@@ -79,6 +95,30 @@ test("mobile landscape: canvas fills viewport and touch restart/main menu work",
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("gameOver"));
   await page.getByRole("button",{name:"MAIN MENU"}).tap();
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("menu"));
+  expect(errors).toEqual([]);
+  await context.close();
+});
+
+test("portrait mobile: game uses available viewport rather than a tiny FIT canvas",async({browser})=>{
+  const width=390,height=844;
+  const context=await browser.newContext({
+    viewport:{width,height},deviceScaleFactor:2,
+    isMobile:true,hasTouch:true,
+  });
+  const page=await context.newPage();
+  const errors=[];
+  page.on("pageerror",(error)=>errors.push(error.message));
+  await page.goto("/?smoke=1");
+  await page.waitForFunction(()=>window.__zombieSmoke?.isActive("menu"));
+  const dimensions=await page.evaluate(()=>window.__zombieSmoke.viewport());
+  expect(dimensions.width).toBeGreaterThanOrEqual(width-3);
+  expect(dimensions.height).toBeGreaterThanOrEqual(height-3);
+  const canvas=await page.locator("#game-root canvas").boundingBox();
+  expect(canvas.width).toBeGreaterThanOrEqual(width-3);
+  expect(canvas.height).toBeGreaterThanOrEqual(height-3);
+  await page.mouse.click(width/2,height/2-4);
+  await page.waitForFunction(()=>window.__zombieSmoke?.isActive("game"));
+  expect(await page.evaluate(()=>window.__zombieSmoke.touchMode())).toBe(true);
   expect(errors).toEqual([]);
   await context.close();
 });

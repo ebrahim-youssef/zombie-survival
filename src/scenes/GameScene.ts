@@ -162,6 +162,10 @@ export class GameScene extends Phaser.Scene {
     return this.inputController?.touchMode??false;
   }
 
+  debugAmmo():number{
+    return this.combat?.inventory.activeWeapon.snapshot().magazineAmmo??-1;
+  }
+
   private refreshHud(now: number): void {
     if (
       !this.player || !this.combat || !this.interactions ||
