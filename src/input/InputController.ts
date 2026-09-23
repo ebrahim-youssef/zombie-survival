@@ -19,6 +19,9 @@ export class InputController implements InputSource {
       ?new MobileInput(scene,camera,player,arena,getZombies)
       :new DesktopInput(scene,camera);
   }
+  debugMobileState():{engaged:boolean;pointerId:number|null;firing:boolean}|null{
+    return this.source instanceof MobileInput ? this.source.debugState() : null;
+  }
   read():InputFrame{return this.source.read();}
   reset():void{this.source.reset();}
   resize(width:number,height:number):void{this.source.resize?.(width,height);}

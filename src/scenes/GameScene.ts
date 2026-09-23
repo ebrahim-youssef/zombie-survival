@@ -162,6 +162,9 @@ export class GameScene extends Phaser.Scene {
     return this.inputController?.touchMode??false;
   }
 
+  debugMobileState():{engaged:boolean;pointerId:number|null;firing:boolean}|null{
+    return this.inputController?.debugMobileState()??null;
+  }
   debugAmmo():number{
     return this.combat?.inventory.activeWeapon.snapshot().magazineAmmo??-1;
   }

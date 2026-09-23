@@ -58,13 +58,22 @@ test("mobile landscape: canvas fills viewport and touch restart/main menu work",
 
   // The right stick should aim AND repeatedly fire the MR6 in default mode.
   const firstAmmo=await page.evaluate(()=>window.__zombieSmoke.ammo());
-  await page.mouse.move(767,312);
-  await page.mouse.down();
-  await page.mouse.move(808,312,{steps:5});
+  // Simulate actual touchscreen interaction, not a desktop mouse in a
+  // hasTouch context. The mouse uses a different Phaser pointer route.
+  const client=await context.newCDPSession(page);
+  await client.send("Input.dispatchTouchEvent",{
+    type:"touchStart",touchPoints:[{x:767,y:312,id:9}],
+  });
+  await client.send("Input.dispatchTouchEvent",{
+    type:"touchMove",touchPoints:[{x:808,y:312,id:9}],
+  });
   await page.waitForTimeout(460);
   const firedAmmo=await page.evaluate(()=>window.__zombieSmoke.ammo());
+  const touchStatus=await page.evaluate(()=>window.__zombieSmoke.mobileState());
+  console.log("MOBILE STICK STATUS:",touchStatus, "AMMO:",firstAmmo,firedAmmo);
+  expect(touchStatus.engaged).toBe(true);
   expect(firedAmmo).toBeLessThan(firstAmmo);
-  await page.mouse.up();
+  await client.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
   // Release must not continue firing, even when the aim direction persists.
   await page.waitForTimeout(60);
   const releasedAmmo=await page.evaluate(()=>window.__zombieSmoke.ammo());

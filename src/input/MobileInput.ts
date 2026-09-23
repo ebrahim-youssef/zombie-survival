@@ -60,6 +60,16 @@ export class MobileInput implements InputSource{
     scene.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE,this.onUp,this);
     window.addEventListener("blur",this.onBlur);
   }
+  /** Dev smoke diagnostics for actual simulated touch input. */
+  debugState():{engaged:boolean;pointerId:number|null;firing:boolean}{
+    return {
+      engaged:this.aimStick.engaged,
+      pointerId:this.aimStick.pointerId,
+      firing:this.aimStick.engaged&&
+        ((this.scene.registry.get("gameSettings") as GameSettings|undefined)
+          ?.mobileAimMode??DEFAULT_SETTINGS.mobileAimMode)==="stick-auto-fire",
+    };
+  }
   read():InputFrame{
     const settings=this.scene.registry.get("gameSettings") as GameSettings|undefined;
     const mode:MobileAimMode=settings?.mobileAimMode??DEFAULT_SETTINGS.mobileAimMode;
