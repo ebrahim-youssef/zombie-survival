@@ -61,6 +61,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.facing = Player.angleToFacing(snapped);
   }
 
+  getMuzzlePosition(direction: Phaser.Math.Vector2): Phaser.Math.Vector2 {
+    const normalized = direction.clone();
+
+    if (normalized.lengthSq() === 0) {
+      normalized.set(1, 0);
+    } else {
+      normalized.normalize();
+    }
+
+    return new Phaser.Math.Vector2(this.x, this.y)
+      .add(normalized.scale(22));
+  }
+
   private static angleToFacing(angle: number): FacingDirection {
     const normalized = Phaser.Math.Angle.Normalize(angle);
     const index = Math.round(normalized / (Math.PI / 4)) % 8;

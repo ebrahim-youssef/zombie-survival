@@ -1,7 +1,9 @@
 import Phaser from "phaser";
+import { CombatController } from "../combat/CombatController";
 import { Player } from "../entities/Player";
 import { DesktopInput } from "../input/DesktopInput";
 import { Crosshair } from "../ui/Crosshair";
+import { HUD } from "../ui/HUD";
 import { Arena } from "../world/Arena";
 import { CameraController } from "../world/CameraController";
 
@@ -10,7 +12,9 @@ export class GameScene extends Phaser.Scene {
   private player: Player | undefined;
   private desktopInput: DesktopInput | undefined;
   private crosshair: Crosshair | undefined;
+  private hud: HUD | undefined;
   private cameraController: CameraController | undefined;
+  private combat: CombatController | undefined;
 
   constructor() {
     super("game");
@@ -33,6 +37,12 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, spawn.x, spawn.y);
     this.desktopInput = new DesktopInput(this, this.cameras.main);
     this.crosshair = new Crosshair(this);
+    this.hud = new HUD(this);
+    this.combat = new CombatController(
+      this,
+      this.player,
+      this.arena,
+    );
 
     this.cameraController = new CameraController(
       this.cameras.main,
@@ -43,7 +53,7 @@ export class GameScene extends Phaser.Scene {
     this.input.mouse?.disableContextMenu();
     this.game.canvas.style.cursor = "none";
 
-    this.createHudPlaceholder();
+    this.hud.updateWeapon(this.combat.weapon.snapshot());
 
     this.events.once(
       Phaser.Scenes.Events.SHUTDOWN,
@@ -52,12 +62,14 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  override update(): void {
+  override update(time: number): void {
     if (
       !this.arena ||
       !this.player ||
       !this.desktopInput ||
-      !this.crosshair
+      !this.crosshair ||
+      !this.hud ||
+      !this.combat
     ) {
       return;
     }
@@ -73,53 +85,16 @@ export class GameScene extends Phaser.Scene {
     this.player.faceWorldPoint(input.aimWorld);
     this.arena.constrainPlayer(this.player);
     this.crosshair.setWorldPosition(input.aimWorld);
-  }
 
-  private createHudPlaceholder(): void {
-    const camera = this.cameras.main;
-
-    this.add
-      .text(24, 22, "ROUND 1", {
-        fontFamily: "monospace",
-        fontSize: "20px",
-        color: "#ede8dc",
-      })
-      .setScrollFactor(0)
-      .setDepth(2000);
-
-    this.add
-      .text(24, camera.height - 48, "HP 150   •   500 PTS", {
-        fontFamily: "monospace",
-        fontSize: "18px",
-        color: "#ede8dc",
-      })
-      .setScrollFactor(0)
-      .setDepth(2000);
-
-    this.add
-      .text(camera.width - 24, camera.height - 48, "MR6   8 / 32", {
-        fontFamily: "monospace",
-        fontSize: "18px",
-        color: "#ede8dc",
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(2000);
-
-    this.add
-      .text(camera.width / 2, 22, "PHASE 1 • MOVE + AIM", {
-        fontFamily: "monospace",
-        fontSize: "14px",
-        color: "#b8ac86",
-      })
-      .setOrigin(0.5, 0)
-      .setScrollFactor(0)
-      .setDepth(2000);
+    this.combat.update(input, time);
+    this.hud.updateWeapon(this.combat.weapon.snapshot());
   }
 
   private shutdown(): void {
     this.desktopInput?.destroy();
     this.crosshair?.destroy();
+    this.hud?.destroy();
+    this.combat?.destroy();
     this.cameraController?.destroy();
     this.arena?.destroy();
 
@@ -127,6 +102,8 @@ export class GameScene extends Phaser.Scene {
 
     this.desktopInput = undefined;
     this.crosshair = undefined;
+    this.hud = undefined;
+    this.combat = undefined;
     this.cameraController = undefined;
     this.player = undefined;
     this.arena = undefined;

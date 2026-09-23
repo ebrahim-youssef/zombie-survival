@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import type { Segment } from "../utils/geometry";
 
 export type WindowId =
   | "north-east"
@@ -33,6 +34,7 @@ export class Arena {
   readonly halfWidth: number;
   readonly halfHeight: number;
   readonly windows: readonly ArenaWindow[];
+  readonly wallSegments: readonly Segment[];
 
   private readonly graphics: Phaser.GameObjects.Graphics;
   private readonly vertices: readonly Phaser.Math.Vector2[];
@@ -55,8 +57,9 @@ export class Arena {
     ];
 
     this.windows = this.createWindows();
+    this.wallSegments = this.createWallSegments(config.windowGapRatio);
     this.graphics = this.scene.add.graphics().setDepth(-20);
-    this.draw(config.windowGapRatio);
+    this.draw();
   }
 
   get spawnPoint(): Phaser.Math.Vector2 {
@@ -121,7 +124,37 @@ export class Arena {
     };
   }
 
-  private draw(windowGapRatio: number): void {
+  private createWallSegments(gapRatio: number): readonly Segment[] {
+    const [top, right, bottom, left] = this.vertices;
+
+    if (!top || !right || !bottom || !left) {
+      throw new Error("Arena vertices were not initialized correctly.");
+    }
+
+    return [
+      ...this.splitWall(top, right, gapRatio),
+      ...this.splitWall(right, bottom, gapRatio),
+      ...this.splitWall(bottom, left, gapRatio),
+      ...this.splitWall(left, top, gapRatio),
+    ];
+  }
+
+  private splitWall(
+    start: Phaser.Math.Vector2,
+    end: Phaser.Math.Vector2,
+    gapRatio: number,
+  ): readonly [Segment, Segment] {
+    const halfGap = gapRatio / 2;
+    const firstEnd = Phaser.Math.LinearXY(start, end, 0.5 - halfGap);
+    const secondStart = Phaser.Math.LinearXY(start, end, 0.5 + halfGap);
+
+    return [
+      { start: start.clone(), end: firstEnd },
+      { start: secondStart, end: end.clone() },
+    ];
+  }
+
+  private draw(): void {
     const [top, right, bottom, left] = this.vertices;
     if (!top || !right || !bottom || !left) return;
 
@@ -131,10 +164,14 @@ export class Arena {
     this.drawFloorGrid();
 
     this.graphics.lineStyle(12, 0x5b5a4f, 1);
-    this.drawWallWithWindow(top, right, windowGapRatio);
-    this.drawWallWithWindow(right, bottom, windowGapRatio);
-    this.drawWallWithWindow(bottom, left, windowGapRatio);
-    this.drawWallWithWindow(left, top, windowGapRatio);
+    for (const wall of this.wallSegments) {
+      this.graphics.lineBetween(
+        wall.start.x,
+        wall.start.y,
+        wall.end.x,
+        wall.end.y,
+      );
+    }
 
     for (const window of this.windows) {
       this.graphics.fillStyle(0xd6ad55, 1);
@@ -147,34 +184,6 @@ export class Arena {
         14,
       );
     }
-  }
-
-  private drawWallWithWindow(
-    start: Phaser.Math.Vector2,
-    end: Phaser.Math.Vector2,
-    gapRatio: number,
-  ): void {
-    const halfGap = gapRatio / 2;
-    const firstEnd = Phaser.Math.LinearXY(start, end, 0.5 - halfGap);
-    const secondStart = Phaser.Math.LinearXY(start, end, 0.5 + halfGap);
-
-    this.graphics.beginPath();
-    this.graphics.moveTo(start.x, start.y);
-    this.graphics.lineTo(firstEnd.x, firstEnd.y);
-    this.graphics.strokePath();
-
-    this.graphics.beginPath();
-    this.graphics.moveTo(secondStart.x, secondStart.y);
-    this.graphics.lineTo(end.x, end.y);
-    this.graphics.strokePath();
-
-    this.graphics.lineStyle(3, 0xd6ad55, 0.9);
-    this.graphics.beginPath();
-    this.graphics.moveTo(firstEnd.x, firstEnd.y);
-    this.graphics.lineTo(secondStart.x, secondStart.y);
-    this.graphics.strokePath();
-
-    this.graphics.lineStyle(12, 0x5b5a4f, 1);
   }
 
   private drawFloorGrid(): void {

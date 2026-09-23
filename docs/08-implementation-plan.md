@@ -13,9 +13,8 @@ Status: **complete**
 
 ## Phase 1 — Arena + player
 
-Status: **in progress**
+Status: **complete**
 
-Deliverables:
 - pseudo-isometric arena;
 - four windows;
 - player;
@@ -26,22 +25,27 @@ Deliverables:
 - custom crosshair;
 - camera controller.
 
-Gate:
-- player movement/aim criteria pass;
-- player cannot escape room.
-
 ## Phase 2 — Combat foundation
 
-- MR6.
-- hitscan.
-- walls block shots.
+Status: **complete**
+
+- MR6 weapon definition/state.
+- semi-auto cadence.
+- hitscan math.
+- wall blocking with window gaps.
 - muzzle flash.
 - tracer.
-- ammo/reload.
-- melee cone.
-- debug ray/cone.
+- magazine/reserve ammo.
+- manual reload.
+- empty-mag auto reload.
+- melee cooldown/cone visual foundation.
+- HUD ammo/reload state.
+
+Zombie hit resolution enters Phase 3 when zombie entities exist.
 
 ## Phase 3 — Zombie vertical slice
+
+Status: **next**
 
 - zombie entity;
 - window entry;
