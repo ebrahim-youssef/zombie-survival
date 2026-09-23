@@ -74,6 +74,24 @@ test("mobile landscape: canvas fills viewport and touch restart/main menu work",
   console.log("MOBILE STICK STATUS:",touchStatus, "AMMO:",firstAmmo,firedAmmo);
   expect(touchStatus.engaged).toBe(true);
   expect(firedAmmo).toBeLessThan(firstAmmo);
+
+  // True simultaneous touches: continue aiming/fire with finger 1, then
+  // deflect the movement stick with finger 2. Both must remain responsive.
+  const beforeMove=await page.evaluate(()=>window.__zombieSmoke.playerPosition());
+  await client.send("Input.dispatchTouchEvent",{
+    type:"touchStart",touchPoints:[
+      {x:808,y:312,id:9},{x:77,y:313,id:10},
+    ],
+  });
+  await client.send("Input.dispatchTouchEvent",{
+    type:"touchMove",touchPoints:[
+      {x:808,y:312,id:9},{x:113,y:313,id:10},
+    ],
+  });
+  await page.waitForTimeout(300);
+  const afterMove=await page.evaluate(()=>window.__zombieSmoke.playerPosition());
+  expect(afterMove.x).toBeGreaterThan(beforeMove.x+10);
+  expect((await page.evaluate(()=>window.__zombieSmoke.mobileState())).engaged).toBe(true);
   await client.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
   // Release must not continue firing, even when the aim direction persists.
   await page.waitForTimeout(60);

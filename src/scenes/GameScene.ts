@@ -164,6 +164,9 @@ export class GameScene extends Phaser.Scene {
   debugMobileState():{engaged:boolean;pointerId:number|null;firing:boolean}|null{
     return this.inputController?.debugMobileState()??null;
   }
+  debugPlayerPosition():{x:number;y:number}|null{
+    return this.player ? {x:this.player.x,y:this.player.y} : null;
+  }
   debugCameraZoom():number{
     return this.cameras.main.zoom;
   }
