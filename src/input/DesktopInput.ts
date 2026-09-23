@@ -17,6 +17,7 @@ export class DesktopInput implements InputSource {
   private readonly slot1: Phaser.Input.Keyboard.Key;
   private readonly slot2: Phaser.Input.Keyboard.Key;
   private readonly escape: Phaser.Input.Keyboard.Key;
+  private readonly shift: Phaser.Input.Keyboard.Key;
   private readonly moveVector = new Phaser.Math.Vector2();
   private readonly aimWorld = new Phaser.Math.Vector2();
 
@@ -47,6 +48,7 @@ export class DesktopInput implements InputSource {
     this.slot1 = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
     this.slot2 = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.escape = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this.shift = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
     scene.input.on(
       Phaser.Input.Events.POINTER_WHEEL,
@@ -86,6 +88,10 @@ export class DesktopInput implements InputSource {
       );
 
     this.moveVector.set(moveX, moveY);
+    // Consume digit presses even while Shift is held so they cannot
+    // unexpectedly switch weapons on the next unshifted frame.
+    const slot1Pressed = Phaser.Input.Keyboard.JustDown(this.slot1);
+    const slot2Pressed = Phaser.Input.Keyboard.JustDown(this.slot2);
 
     const frame: InputFrame = {
       move: this.moveVector,
@@ -105,16 +111,9 @@ export class DesktopInput implements InputSource {
         Phaser.Input.Keyboard.JustDown(
           this.interact,
         ),
-      slotPressed:
-        Phaser.Input.Keyboard.JustDown(
-          this.slot1,
-        )
-          ? 1
-          : Phaser.Input.Keyboard.JustDown(
-                this.slot2,
-              )
-            ? 2
-            : 0,
+      slotPressed: this.shift.isDown
+        ? 0
+        : slot1Pressed ? 1 : slot2Pressed ? 2 : 0,
       cycleWeapon: this.consumeWheel(),
       pausePressed:
         Phaser.Input.Keyboard.JustDown(

@@ -47,6 +47,7 @@ jobs:
           path: |
             test-results/cabin-art-preview.png
             test-results/character-closeups.png
+            test-results/debug-hitboxes-preview.png
           retention-days: 14
           if-no-files-found: error
 

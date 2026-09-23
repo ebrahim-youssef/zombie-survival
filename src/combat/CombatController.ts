@@ -43,7 +43,9 @@ export class CombatController {
   }
 
   setDebugRayCapture(enabled: boolean): void {
-    this.captureDebugRays = import.meta.env.DEV && enabled;
+    const stagingDebug = import.meta.env.VITE_ENABLE_DEBUG_TOOLS === "true"
+      && new URLSearchParams(window.location.search).has("debug");
+    this.captureDebugRays = (import.meta.env.DEV || stagingDebug) && enabled;
     if (!enabled) this.debugRays.length = 0;
   }
 

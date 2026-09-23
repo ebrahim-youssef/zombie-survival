@@ -38,9 +38,12 @@ Implemented in this slice:
 - weapon spread interpreted as full cone width;
 - generated procedural player/zombie sprite details (placeholder improvement);
 - clear HP bar and red damage flash;
-- dev-only F3 diagnostic visualization: wall segments, spawn points,
+- dev-only range diagnostic visualization (now Shift+1): wall segments, spawn points,
   interaction/melee ranges, zombie hit/attack radii and recent hitscan rays;
-- F6 +950 points, F7 refill, F8 kill all, F9 jump to next round and F10 god mode;
+- Shift+2 +950 points, Shift+3 refill, Shift+4 kill all, Shift+5 next round,
+  Shift+6 god mode, Shift+7 actual independent Arcade Physics hitboxes;
+- optional explicit staging build flag `VITE_ENABLE_DEBUG_TOOLS=true` and
+  query flag `?debug=1`, keeping public production shortcuts disabled;
 - automated tests for waves, inventory, firing/reload, economy, persistence,
   gameplay clock and multi-pellet scoring; GitHub CI gates on the test suite.
 

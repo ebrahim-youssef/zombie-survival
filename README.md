@@ -30,10 +30,28 @@ npm run dev
 
 ## Dev diagnostics
 
-While playing via `npm run dev`: F3 toggles collision/range/ray overlay,
-F6 grants 950 points, F7 replenishes the equipped weapon, F8 clears zombies,
-F9 skips to the next round, F10 toggles invulnerability. Not available in the
-production build.
+While playing via `npm run dev`, use **Shift + the number row**:
+
+| Shortcut | Diagnostic |
+| --- | --- |
+| Shift+1 | Toggle range/spawn/wall/hitscan overlay |
+| Shift+2 | Add 950 points |
+| Shift+3 | Refill equipped weapon |
+| Shift+4 | Kill all currently alive zombies |
+| Shift+5 | Advance to the next round |
+| Shift+6 | Toggle invulnerability |
+| Shift+7 | Toggle **actual Arcade Physics hitboxes** independently |
+
+Hitbox colors: green = player's real physics body, pink = live zombies'
+real physics bodies, yellow = hitscan wall segments/window gaps.
+The former F-key bindings have been removed. Holding Shift suppresses
+the normal 1/2 weapon-slot shortcuts.
+
+Debug tools are automatically available in local Vite development.
+To test on a **private Cloudflare preview/staging deployment**, set
+`VITE_ENABLE_DEBUG_TOOLS=true` as a build environment variable and open
+the deployed URL with `?debug=1`. Leave this variable unset on the
+public/production deployment, where debug shortcuts are disabled.
 
 ## Cloudflare Pages
 

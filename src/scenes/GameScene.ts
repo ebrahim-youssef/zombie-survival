@@ -70,7 +70,11 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.width, this.cameras.main.height, 0xb53232,
     ).setScrollFactor(0).setDepth(1000).setAlpha(0);
 
-    if (import.meta.env.DEV) {
+    // In production these cheats remain disabled unless explicitly
+    // enabled on a staging deployment AND requested with ?debug=1.
+    const stagingDebug = import.meta.env.VITE_ENABLE_DEBUG_TOOLS === "true"
+      && new URLSearchParams(window.location.search).has("debug");
+    if (import.meta.env.DEV || stagingDebug) {
       this.debug = new DebugController(
         this, this.arena, this.player,
         this.zombies, this.waves, this.combat, this.runState,
@@ -152,6 +156,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Dev-only browser smoke hook, absent from production entry points. */
+  debugShortcutsState():ReturnType<DebugController["snapshot"]>|null{
+    return this.debug?.snapshot()??null;
+  }
+
   debugForceGameOver():void{
     if(!import.meta.env.DEV)return;
     this.endGame(this.clock.now);
