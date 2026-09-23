@@ -4,7 +4,7 @@ test("desktop: gameplay starts and Enter reliably restarts from game over",async
   const context=await browser.newContext({viewport:{width:1280,height:720}});
   const page=await context.newPage();
   const errors=[];
-  page.on("pageerror",(error)=>{errors.push(error.message);console.log("PAGE ERROR:",error.message);});
+  page.on("pageerror",(error)=>{errors.push(error.message);console.log("PAGE ERROR STACK:",error.stack);});
   await page.goto("/?smoke=1");
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("menu"));
   await page.mouse.click(640,360);
@@ -41,7 +41,7 @@ test("mobile landscape: canvas fills viewport and touch restart/main menu work",
   });
   const page=await context.newPage();
   const errors=[];
-  page.on("pageerror",(error)=>{errors.push(error.message);console.log("PAGE ERROR:",error.message);});
+  page.on("pageerror",(error)=>{errors.push(error.message);console.log("PAGE ERROR STACK:",error.stack);});
   await page.goto("/?smoke=1");
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("menu"));
   const actual=await page.evaluate(()=>window.__zombieSmoke.viewport());
