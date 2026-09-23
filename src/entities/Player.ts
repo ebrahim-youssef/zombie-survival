@@ -73,7 +73,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private static ensureTexture(scene: Phaser.Scene): void {
     if (scene.textures.exists(PLAYER_TEXTURE)) return;
 
-    const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
+    const graphics = scene.make.graphics({ x: 0, y: 0 }, false);
 
     graphics.fillStyle(0x575f58, 1);
     graphics.fillRoundedRect(6, 7, 20, 18, 4);

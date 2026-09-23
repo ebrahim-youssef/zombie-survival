@@ -52,7 +52,7 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  update(): void {
+  override update(): void {
     if (
       !this.arena ||
       !this.player ||
