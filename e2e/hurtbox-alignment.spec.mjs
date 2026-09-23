@@ -21,11 +21,15 @@ test("Stage 2: aligned projected torso is hittable by real gun fire",async({brow
   expect(result.visualWidth).toBe(96);
   expect(result.playerFootY-result.playerCombatY).toBe(35);
   expect(result.targetFootY-result.targetCombatY).toBe(35);
+  expect(Math.abs(result.targetPhysicsFootY-result.targetFootY)).toBeLessThan(2);
   expect(result.muzzleY).toBeLessThan(result.playerFootY);
   expect(Math.abs(result.physicsFootY-result.playerFootY)).toBeLessThan(2);
   expect(result.ammoUsed).toBe(1);
   expect(result.killed).toBe(true);
   expect(result.pointsGained).toBe(60);
+  // Check the near-body edge, not the legacy foot-radius melee test.
+  const melee=await page.evaluate(()=>window.__zombieSmoke.alignedMelee());
+  expect(melee).toEqual({killed:true,pointsGained:130});
   await page.screenshot({
     path:"test-results/aligned-hurtbox-preview.png",animations:"disabled",
   });

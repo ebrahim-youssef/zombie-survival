@@ -184,7 +184,7 @@ export class GameScene extends Phaser.Scene {
   debugFireAtAlignedTarget():{
     killed:boolean;ammoUsed:number;pointsGained:number;
     playerFootY:number;playerCombatY:number;physicsFootY:number;
-    targetFootY:number;targetCombatY:number;
+    targetFootY:number;targetCombatY:number;targetPhysicsFootY:number;
     muzzleY:number;visualWidth:number;
   }|null{
     if(!import.meta.env.DEV||!this.player||!this.arena||
@@ -194,6 +194,8 @@ export class GameScene extends Phaser.Scene {
     target.setPosition(player.x+150,player.y);
     const body=target.body;
     if(body instanceof Phaser.Physics.Arcade.Body)body.reset(target.x,target.y);
+    const targetPhysicsFootY=body instanceof Phaser.Physics.Arcade.Body
+      ?body.center.y:NaN;
     const aimed=target.getAimPoint();
     const anchor=player.getAimAnchor();
     const barrel=player.getMuzzlePosition(aimed.clone().subtract(anchor));
@@ -216,9 +218,28 @@ export class GameScene extends Phaser.Scene {
         ?playerBody.center.y:NaN,
       targetFootY:target.y,
       targetCombatY:target.hurtbox.centerY,
+      targetPhysicsFootY,
       muzzleY:barrel.y,
       visualWidth:player.displayWidth,
     };
+  }
+
+  /** Browser-only regression for the real 150-damage melee pipeline. */
+  debugMeleeAtAlignedTarget():{killed:boolean;pointsGained:number}|null{
+    if(!import.meta.env.DEV||!this.player||!this.arena||
+      !this.zombies||!this.combat||!this.runState)return null;
+    const zombie=this.zombies.spawn(this.arena.windows[0]!,100,0);
+    zombie.setPosition(this.player.x+55,this.player.y);
+    const body=zombie.body;
+    if(body instanceof Phaser.Physics.Arcade.Body)body.reset(zombie.x,zombie.y);
+    const before=this.runState.points;
+    this.combat.update({
+      move:new Phaser.Math.Vector2(),aimWorld:zombie.getAimPoint(),
+      fireHeld:false,firePressed:false,meleePressed:true,
+      reloadPressed:false,interactPressed:false,slotPressed:0,
+      cycleWeapon:0,pausePressed:false,
+    },this.clock.now+1500);
+    return {killed:zombie.isDead,pointsGained:this.runState.points-before};
   }
 
   debugAmmo():number{
