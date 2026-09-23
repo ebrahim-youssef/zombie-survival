@@ -18,7 +18,12 @@ test("art assets are initialized at native pixel resolution in a live scene",asy
     heart:{width:18,height:16},
     shelf:{width:68,height:94},
   });
-  await page.waitForTimeout(450);
+  await page.waitForTimeout(1600);
+  // Publish the actual browser-rendered scene for review in the Actions run.
+  await page.screenshot({
+    path:"test-results/cabin-art-preview.png",
+    animations:"disabled",
+  });
   expect(errors).toEqual([]);
   await context.close();
 });
