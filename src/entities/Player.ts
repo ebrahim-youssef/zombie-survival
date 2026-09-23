@@ -8,6 +8,9 @@ const DIAGONAL_COMPONENT = 1 / Math.sqrt(2);
 export class Player extends Phaser.Physics.Arcade.Sprite {
   facing: FacingDirection = "e";
 
+  private currentHealth = PLAYER_CONFIG.maxHealth;
+  private lastDamageAt = Number.NEGATIVE_INFINITY;
+
   constructor(scene: Phaser.Scene, x: number, y: number) {
     Player.ensureTexture(scene);
     super(scene, x, y, PLAYER_TEXTURE);
@@ -22,8 +25,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setCircle(11, 5, 5);
   }
 
+  get health(): number {
+    return this.currentHealth;
+  }
+
+  get maxHealth(): number {
+    return PLAYER_CONFIG.maxHealth;
+  }
+
+  get isDead(): boolean {
+    return this.currentHealth <= 0;
+  }
+
   applyMovement(move: Phaser.Math.Vector2): void {
-    if (move.x === 0 && move.y === 0) {
+    if (this.isDead || (move.x === 0 && move.y === 0)) {
       this.setVelocity(0, 0);
       return;
     }
@@ -45,6 +60,41 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       Math.sign(move.x) * PLAYER_CONFIG.baseMoveSpeed,
       Math.sign(move.y) * PLAYER_CONFIG.baseMoveSpeed,
     );
+  }
+
+  updateSurvival(now: number, deltaMs: number): void {
+    if (this.isDead || this.currentHealth >= PLAYER_CONFIG.maxHealth) {
+      return;
+    }
+
+    if (now - this.lastDamageAt < PLAYER_CONFIG.regenDelayMs) {
+      return;
+    }
+
+    const regen =
+      PLAYER_CONFIG.regenPerSecond * (deltaMs / 1000);
+
+    this.currentHealth = Math.min(
+      PLAYER_CONFIG.maxHealth,
+      this.currentHealth + regen,
+    );
+  }
+
+  takeDamage(amount: number, now: number): number {
+    if (amount <= 0 || this.isDead) return 0;
+
+    const before = this.currentHealth;
+    this.currentHealth = Math.max(0, before - amount);
+    this.lastDamageAt = now;
+
+    this.setTintFill(0xb94a48);
+    this.scene.time.delayedCall(90, () => {
+      if (this.active && !this.isDead) {
+        this.clearTint();
+      }
+    });
+
+    return before - this.currentHealth;
   }
 
   faceWorldPoint(worldPoint: Phaser.Math.Vector2): void {

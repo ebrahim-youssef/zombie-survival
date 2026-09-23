@@ -10,6 +10,8 @@ export interface RayHit {
   distance: number;
 }
 
+export interface CircleRayHit extends RayHit {}
+
 function cross(
   ax: number,
   ay: number,
@@ -52,6 +54,50 @@ export function raySegmentIntersection(
       origin.y + ry * t,
     ),
     distance: maxDistance * t,
+  };
+}
+
+export function rayCircleIntersection(
+  origin: Phaser.Math.Vector2,
+  direction: Phaser.Math.Vector2,
+  maxDistance: number,
+  center: Phaser.Math.Vector2,
+  radius: number,
+): CircleRayHit | null {
+  if (maxDistance <= 0 || radius <= 0) return null;
+
+  const normalized = direction.clone();
+  if (normalized.lengthSq() === 0) return null;
+  normalized.normalize();
+
+  const toCenter = center.clone().subtract(origin);
+  const projection = toCenter.dot(normalized);
+
+  if (projection < -radius) return null;
+
+  const perpendicularSq =
+    toCenter.lengthSq() - projection * projection;
+  const radiusSq = radius * radius;
+
+  if (perpendicularSq > radiusSq) return null;
+
+  const halfChord = Math.sqrt(
+    Math.max(0, radiusSq - perpendicularSq),
+  );
+
+  let distance = projection - halfChord;
+
+  if (distance < 0) {
+    distance = projection + halfChord;
+  }
+
+  if (distance < 0 || distance > maxDistance) return null;
+
+  return {
+    point: origin
+      .clone()
+      .add(normalized.scale(distance)),
+    distance,
   };
 }
 

@@ -1,7 +1,10 @@
 import Phaser from "phaser";
+import { PLAYER_CONFIG } from "../config/player";
 import type { Player } from "../entities/Player";
+import type { RunState } from "../game/RunState";
 import type { InputFrame } from "../types/game";
 import type { Arena } from "../world/Arena";
+import type { ZombieController } from "../zombies/ZombieController";
 import { WeaponController } from "../weapons/WeaponController";
 import { MR6 } from "../weapons/weaponDefinitions";
 import { CombatEffects } from "./CombatEffects";
@@ -18,6 +21,8 @@ export class CombatController {
     private readonly scene: Phaser.Scene,
     private readonly player: Player,
     private readonly arena: Arena,
+    private readonly zombies: ZombieController,
+    private readonly runState: RunState,
   ) {
     this.effects = new CombatEffects(scene);
     this.melee = new MeleeController(this.effects);
@@ -36,11 +41,7 @@ export class CombatController {
     );
 
     if (input.meleePressed) {
-      this.melee.tryAttack(
-        now,
-        new Phaser.Math.Vector2(this.player.x, this.player.y),
-        aimDirection,
-      );
+      this.tryMelee(now, aimDirection);
     }
 
     const fired = this.weapon.tryFire(
@@ -58,6 +59,36 @@ export class CombatController {
     this.weapon.cancelReload();
   }
 
+  private tryMelee(
+    now: number,
+    aimDirection: Phaser.Math.Vector2,
+  ): void {
+    const origin = new Phaser.Math.Vector2(
+      this.player.x,
+      this.player.y,
+    );
+
+    const zombie = this.melee.tryAttack(
+      now,
+      origin,
+      aimDirection,
+      this.zombies.getAliveZombies(),
+    );
+
+    if (!zombie) return;
+
+    const damage = zombie.takeDamage(
+      PLAYER_CONFIG.meleeDamage,
+    );
+
+    if (damage.applied) {
+      this.runState.awardZombieDamage(
+        damage.killed,
+        "melee",
+      );
+    }
+  }
+
   private fireHitscan(aimDirection: Phaser.Math.Vector2): void {
     if (aimDirection.lengthSq() === 0) return;
 
@@ -73,6 +104,7 @@ export class CombatController {
       direction,
       definition.tracerMaxDistance,
       this.arena.wallSegments,
+      this.zombies.getAliveZombies(),
     );
 
     this.effects.showShot(
@@ -80,6 +112,19 @@ export class CombatController {
       result.end,
       definition.tracerDurationMs,
     );
+
+    if (!result.zombie) return;
+
+    const damage = result.zombie.takeDamage(
+      definition.damage,
+    );
+
+    if (damage.applied) {
+      this.runState.awardZombieDamage(
+        damage.killed,
+        "gun",
+      );
+    }
   }
 
   private applySpread(

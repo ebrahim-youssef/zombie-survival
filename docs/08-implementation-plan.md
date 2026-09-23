@@ -4,66 +4,59 @@
 
 Status: **complete**
 
-- Vite + TypeScript.
-- Phaser boot.
-- 1280×720 logical size.
-- responsive scaling.
-- Boot/Menu/Game/UI scenes.
-- config foundation.
-
 ## Phase 1 — Arena + player
 
 Status: **complete**
 
 - pseudo-isometric arena;
 - four windows;
-- player;
-- Arcade body;
-- desktop movement;
-- deliberate 1.25× diagonal speed;
-- 8-direction aim facing;
-- custom crosshair;
-- camera controller.
+- player movement;
+- 1.25× diagonal magnitude;
+- independent aim;
+- 8-direction facing;
+- crosshair;
+- camera foundation.
 
 ## Phase 2 — Combat foundation
 
 Status: **complete**
 
-- MR6 weapon definition/state.
+- MR6.
 - semi-auto cadence.
-- hitscan math.
-- wall blocking with window gaps.
-- muzzle flash.
-- tracer.
-- magazine/reserve ammo.
-- manual reload.
-- empty-mag auto reload.
-- melee cooldown/cone visual foundation.
-- HUD ammo/reload state.
-
-Zombie hit resolution enters Phase 3 when zombie entities exist.
+- hitscan.
+- wall/window ray geometry.
+- muzzle flash/tracer.
+- ammo/reload.
+- melee cone foundation.
 
 ## Phase 3 — Zombie vertical slice
 
-Status: **next**
+Status: **complete**
 
-- zombie entity;
-- window entry;
-- direct pursuit;
-- collision/separation;
-- attack;
-- player damage/regen;
-- death/corpse;
-- points.
+- standard zombie entity.
+- one test zombie per window.
+- window entry.
+- direct pursuit.
+- zombie separation.
+- attack range/cooldown.
+- player damage/regen.
+- gun + melee zombie hit resolution.
+- BO3-style scoring.
+- zombie death/corpse fade.
+- basic game over/restart.
 
 ## Phase 4 — Waves
 
-- BO3 health/count functions;
-- spawn scheduler;
-- anti-streak window selection;
-- active cap;
-- round completion/intermission;
-- speed/spawn tuning.
+Status: **next**
+
+- BO3 health/count functions.
+- spawn scheduler.
+- randomized anti-streak window selection.
+- active-zombie cap.
+- round completion.
+- ~5-second intermission.
+- increasing spawn pressure.
+- round HUD becomes live rather than fixed.
 
 ## Phase 5 — Weapons + inventory
 
@@ -100,10 +93,10 @@ Status: **next**
 
 ## Phase 9 — Polish/hardening
 
-- original pixel-art assets;
-- animations;
-- feedback;
-- performance;
+- original pixel-art assets.
+- animations.
+- feedback.
+- performance.
 - full acceptance pass.
 
 ## Quality gate per phase
