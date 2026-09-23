@@ -48,7 +48,8 @@ export class GameScene extends Phaser.Scene {
     this.runState = new RunState();
     this.audio = new AudioController(this);
     this.inputController = new InputController(
-      this, this.cameras.main, this.player,
+      this,this.cameras.main,this.player,this.arena,
+      ()=>this.zombies?.getAliveZombies()??[],
     );
     this.crosshair = new Crosshair(this);
     this.hud = new HUD(this);
@@ -62,7 +63,8 @@ export class GameScene extends Phaser.Scene {
       this.player, this.arena, this.combat.inventory, this.runState,
     );
     this.cameraController = new CameraController(
-      this.cameras.main, this.player, this.arena,
+      this.cameras.main,this.player,this.arena,
+      this.inputController.touchMode,
     );
     this.damageFlash = this.add.rectangle(
       this.cameras.main.width / 2, this.cameras.main.height / 2,
@@ -80,8 +82,10 @@ export class GameScene extends Phaser.Scene {
     this.game.canvas.style.cursor = this.inputController.touchMode
       ? "default"
       : "none";
+    this.resizeUI(this.scale.width,this.scale.height);
     this.refreshHud(0);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
+    this.scale.on(Phaser.Scale.Events.RESIZE,this.onResize,this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN,this.shutdown,this);
   }
 
   override update(_globalTime: number, delta: number): void {
@@ -173,18 +177,28 @@ export class GameScene extends Phaser.Scene {
       this.runState.points, wave.round,
     );
     this.registry.set("persistedGameData", saved);
-    this.hud.showGameOver(
-      wave.round, this.runState.kills, this.runState.points,
-      saved.highScore, saved.highestRound,
-    );
-    const restart = (): void => {
-      if (this.scene.isActive()) this.scene.restart();
-    };
-    this.input.once(Phaser.Input.Events.POINTER_DOWN, restart);
-    this.input.keyboard?.once("keydown-ENTER", restart);
+    // Dedicated overlay receives input while gameplay and touch buttons
+    // are paused, fixing the blocked click/Enter restart regression.
+    this.scene.pause();
+    this.scene.launch("gameOver",{
+      round:wave.round,kills:this.runState.kills,points:this.runState.points,
+      highScore:saved.highScore,highestRound:saved.highestRound,
+    });
+  }
+
+  private onResize():void{
+    this.resizeUI(this.scale.width,this.scale.height);
+  }
+
+  private resizeUI(width:number,height:number):void{
+    this.cameraController?.resize(width,height);
+    this.inputController?.resize(width,height);
+    this.hud?.resize(width,height,this.inputController?.touchMode??false);
+    this.damageFlash?.setPosition(width/2,height/2).setSize(width,height);
   }
 
   private shutdown(): void {
+    this.scale.off(Phaser.Scale.Events.RESIZE,this.onResize,this);
     this.debug?.destroy();
     this.inputController?.destroy();
     this.crosshair?.destroy();

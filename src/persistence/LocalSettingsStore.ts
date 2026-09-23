@@ -1,180 +1,77 @@
-export interface GameSettings {
-  masterVolume: number;
-  mouseSensitivity: number;
-  damageNumbers: boolean;
+export type MobileAimMode="stick-auto-fire"|"auto-aim"|"manual";
+
+export interface GameSettings{
+  masterVolume:number;
+  mouseSensitivity:number;
+  damageNumbers:boolean;
+  mobileAimMode:MobileAimMode;
 }
-
-export interface PersistedGameData {
-  version: 1;
-  highScore: number;
-  highestRound: number;
-  settings: GameSettings;
+export interface PersistedGameData{
+  version:1;
+  highScore:number;
+  highestRound:number;
+  settings:GameSettings;
 }
-
-const STORAGE_KEY = "zombie-survival:data:v1";
-
-export const DEFAULT_SETTINGS: GameSettings = {
-  masterVolume: 0.65,
-  mouseSensitivity: 1,
-  damageNumbers: false,
+const STORAGE_KEY="zombie-survival:data:v1";
+export const DEFAULT_SETTINGS:GameSettings={
+  masterVolume:.65,mouseSensitivity:1,damageNumbers:false,
+  mobileAimMode:"stick-auto-fire",
 };
-
-export const DEFAULT_PERSISTED_DATA: PersistedGameData = {
-  version: 1,
-  highScore: 0,
-  highestRound: 0,
-  settings: DEFAULT_SETTINGS,
+export const DEFAULT_PERSISTED_DATA:PersistedGameData={
+  version:1,highScore:0,highestRound:0,settings:DEFAULT_SETTINGS,
 };
-
-export class LocalSettingsStore {
-  load(): PersistedGameData {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-
-      if (!raw) {
-        return this.cloneDefaults();
-      }
-
-      const parsed: unknown = JSON.parse(raw);
-
-      if (!this.isRecord(parsed)) {
-        return this.cloneDefaults();
-      }
-
-      const settingsValue = this.isRecord(parsed.settings)
-        ? parsed.settings
-        : {};
-
-      return {
-        version: 1,
-        highScore: this.toNonNegativeInteger(
-          parsed.highScore,
-        ),
-        highestRound: this.toNonNegativeInteger(
-          parsed.highestRound,
-        ),
-        settings: {
-          masterVolume: this.clampNumber(
-            settingsValue.masterVolume,
-            0,
-            1,
-            DEFAULT_SETTINGS.masterVolume,
-          ),
-          mouseSensitivity: this.clampNumber(
-            settingsValue.mouseSensitivity,
-            0.25,
-            2,
-            DEFAULT_SETTINGS.mouseSensitivity,
-          ),
-          damageNumbers:
-            typeof settingsValue.damageNumbers === "boolean"
-              ? settingsValue.damageNumbers
-              : DEFAULT_SETTINGS.damageNumbers,
-        },
-      };
-    } catch {
-      return this.cloneDefaults();
-    }
+export function isMobileAimMode(value:unknown):value is MobileAimMode{
+  return value==="stick-auto-fire"||value==="auto-aim"||value==="manual";
+}
+function numberInRange(value:unknown,min:number,max:number,fallback:number):number{
+  return typeof value==="number"&&Number.isFinite(value)
+    ?Math.max(min,Math.min(max,value)):fallback;
+}
+function nonnegativeInteger(value:unknown):number{
+  return typeof value==="number"&&Number.isFinite(value)
+    ?Math.max(0,Math.floor(value)):0;
+}
+function isRecord(value:unknown):value is Record<string,unknown>{
+  return value!==null&&typeof value==="object"&&!Array.isArray(value);
+}
+function sanitizeSettings(input:unknown):GameSettings{
+  const data=isRecord(input)?input:{};
+  return {
+    masterVolume:numberInRange(data.masterVolume,0,1,DEFAULT_SETTINGS.masterVolume),
+    mouseSensitivity:numberInRange(data.mouseSensitivity,.25,2,DEFAULT_SETTINGS.mouseSensitivity),
+    damageNumbers:typeof data.damageNumbers==="boolean"?data.damageNumbers:DEFAULT_SETTINGS.damageNumbers,
+    mobileAimMode:isMobileAimMode(data.mobileAimMode)?data.mobileAimMode:DEFAULT_SETTINGS.mobileAimMode,
+  };
+}
+export class LocalSettingsStore{
+  load():PersistedGameData{
+    try{
+      const raw=window.localStorage.getItem(STORAGE_KEY);
+      if(!raw)return this.defaults();
+      const parsed:unknown=JSON.parse(raw);
+      if(!isRecord(parsed))return this.defaults();
+      return {version:1,highScore:nonnegativeInteger(parsed.highScore),
+        highestRound:nonnegativeInteger(parsed.highestRound),
+        settings:sanitizeSettings(parsed.settings)};
+    }catch{return this.defaults();}
   }
-
-  saveSettings(
-    settings: GameSettings,
-  ): PersistedGameData {
-    const current = this.load();
-    const next: PersistedGameData = {
-      ...current,
-      settings: {
-        masterVolume: this.clampNumber(
-          settings.masterVolume,
-          0,
-          1,
-          DEFAULT_SETTINGS.masterVolume,
-        ),
-        mouseSensitivity: this.clampNumber(
-          settings.mouseSensitivity,
-          0.25,
-          2,
-          DEFAULT_SETTINGS.mouseSensitivity,
-        ),
-        damageNumbers: settings.damageNumbers,
-      },
-    };
-
+  saveSettings(settings:GameSettings):PersistedGameData{
+    const next={...this.load(),settings:sanitizeSettings(settings)};
     this.write(next);
     return next;
   }
-
-  recordRun(
-    score: number,
-    round: number,
-  ): PersistedGameData {
-    const current = this.load();
-
-    const next: PersistedGameData = {
-      ...current,
-      highScore: Math.max(
-        current.highScore,
-        this.toNonNegativeInteger(score),
-      ),
-      highestRound: Math.max(
-        current.highestRound,
-        this.toNonNegativeInteger(round),
-      ),
-    };
-
+  recordRun(score:number,round:number):PersistedGameData{
+    const old=this.load();
+    const next={...old,highScore:Math.max(old.highScore,nonnegativeInteger(score)),
+      highestRound:Math.max(old.highestRound,nonnegativeInteger(round))};
     this.write(next);
     return next;
   }
-
-  private write(data: PersistedGameData): void {
-    try {
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(data),
-      );
-    } catch {
-      // Storage can be unavailable in private/sandboxed contexts.
-    }
+  private defaults():PersistedGameData{
+    return {...DEFAULT_PERSISTED_DATA,settings:{...DEFAULT_SETTINGS}};
   }
-
-  private cloneDefaults(): PersistedGameData {
-    return {
-      ...DEFAULT_PERSISTED_DATA,
-      settings: { ...DEFAULT_SETTINGS },
-    };
-  }
-
-  private isRecord(
-    value: unknown,
-  ): value is Record<string, unknown> {
-    return (
-      typeof value === "object" &&
-      value !== null
-    );
-  }
-
-  private toNonNegativeInteger(
-    value: unknown,
-  ): number {
-    return typeof value === "number" &&
-      Number.isFinite(value)
-      ? Math.max(0, Math.floor(value))
-      : 0;
-  }
-
-  private clampNumber(
-    value: unknown,
-    min: number,
-    max: number,
-    fallback: number,
-  ): number {
-    if (
-      typeof value !== "number" ||
-      !Number.isFinite(value)
-    ) {
-      return fallback;
-    }
-
-    return Math.min(max, Math.max(min, value));
+  private write(data:PersistedGameData):void{
+    try{window.localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}
+    catch{/* Sandboxed / private browser */ }
   }
 }

@@ -1,491 +1,246 @@
 import Phaser from "phaser";
 import type { Player } from "../entities/Player";
+import type { Zombie } from "../entities/Zombie";
+import type { Arena } from "../world/Arena";
 import type { InputFrame } from "../types/game";
+import type { MobileAimMode,GameSettings } from "../persistence/LocalSettingsStore";
+import { DEFAULT_SETTINGS } from "../persistence/LocalSettingsStore";
+import { mobileControlsLayout,type MobileControlsLayout } from "../ui/responsive";
+import { nearestRayHit } from "../utils/geometry";
+import { nearestAimTarget } from "./mobileAim";
 import type { InputSource } from "./InputSource";
 
-interface StickState {
-  center: Phaser.Math.Vector2;
-  radius: number;
-  pointerId: number | null;
-  base: Phaser.GameObjects.Arc;
-  knob: Phaser.GameObjects.Arc;
+interface Stick {
+  center:Phaser.Math.Vector2;radius:number;
+  pointerId:number|null;engaged:boolean;
+  base:Phaser.GameObjects.Arc;knob:Phaser.GameObjects.Arc;
+  label:Phaser.GameObjects.Text;
 }
-
-export class MobileInput implements InputSource {
-  private readonly objects: Phaser.GameObjects.GameObject[] = [];
-
-  private readonly moveVector = new Phaser.Math.Vector2();
-  private readonly aimDirection = new Phaser.Math.Vector2(1, 0);
-  private readonly aimWorld = new Phaser.Math.Vector2();
-
-  private readonly movementStick: StickState;
-  private readonly aimStick: StickState;
-
-  private fireHeld = false;
-  private firePressed = false;
-  private firePointerId: number | null = null;
-
-  private meleePressed = false;
-  private reloadPressed = false;
-  private interactPressed = false;
-  private cycleWeapon: -1 | 0 | 1 = 0;
-  private pausePressed = false;
-
+interface Action{
+  name:"fire"|"melee"|"reload"|"use"|"swap"|"pause";
+  base:Phaser.GameObjects.Arc;label:Phaser.GameObjects.Text;
+}
+const TARGET_RANGE=780;
+const ASSIST_CONE_HALF_DEGREES=23;
+export class MobileInput implements InputSource{
+  private readonly move=new Phaser.Math.Vector2();
+  private readonly facing=new Phaser.Math.Vector2(1,0);
+  private readonly aim=new Phaser.Math.Vector2();
+  private readonly movementStick:Stick;
+  private readonly aimStick:Stick;
+  private readonly buttons:Action[]=[];
+  private firePointerId:number|null=null;
+  private fireDown=false;
+  private pendingFire=false;
+  private melee=false;
+  private reload=false;
+  private interact=false;
+  private swap:-1|0|1=0;
+  private pause=false;
+  private layout:MobileControlsLayout;
   constructor(
-    private readonly scene: Phaser.Scene,
-    private readonly camera: Phaser.Cameras.Scene2D.Camera,
-    private readonly player: Player,
-  ) {
+    private readonly scene:Phaser.Scene,
+    private readonly camera:Phaser.Cameras.Scene2D.Camera,
+    private readonly player:Player,
+    private readonly arena:Arena,
+    private readonly getZombies:()=>readonly Zombie[],
+  ){
     scene.input.addPointer(5);
-
-    const width = camera.width;
-    const height = camera.height;
-
-    this.movementStick = this.createStick(
-      145,
-      height - 145,
-      76,
-      "MOVE",
-    );
-
-    this.aimStick = this.createStick(
-      width - 145,
-      height - 145,
-      74,
-      "AIM",
-    );
-
-    this.createActionButton(
-      width - 305,
-      height - 130,
-      45,
-      "FIRE",
-      (pointer) => {
-        this.fireHeld = true;
-        this.firePressed = true;
-        this.firePointerId = pointer.id;
-      },
-    );
-
-    this.createActionButton(
-      width - 400,
-      height - 88,
-      34,
-      "MELEE",
-      () => {
-        this.meleePressed = true;
-      },
-    );
-
-    this.createActionButton(
-      width - 305,
-      height - 55,
-      31,
-      "R",
-      () => {
-        this.reloadPressed = true;
-      },
-    );
-
-    this.createActionButton(
-      width - 408,
-      height - 178,
-      35,
-      "USE",
-      () => {
-        this.interactPressed = true;
-      },
-    );
-
-    this.createActionButton(
-      width - 302,
-      height - 228,
-      32,
-      "SWAP",
-      () => {
-        this.cycleWeapon = 1;
-      },
-    );
-
-    this.createActionButton(
-      width - 48,
-      48,
-      28,
-      "II",
-      () => {
-        this.pausePressed = true;
-      },
-    );
-
-    scene.input.on(
-      Phaser.Input.Events.POINTER_MOVE,
-      this.onPointerMove,
-      this,
-    );
-
-    scene.input.on(
-      Phaser.Input.Events.POINTER_UP,
-      this.onPointerUp,
-      this,
-    );
+    this.layout=mobileControlsLayout(camera.width,camera.height);
+    this.movementStick=this.createStick("MOVE");
+    this.aimStick=this.createStick("AIM");
+    const specs=[
+      ["fire","FIRE"],["melee","MELEE"],["reload","R"],
+      ["use","USE"],["swap","SWAP"],["pause","II"],
+    ] as const;
+    for(const [name,label] of specs)this.buttons.push(this.createButton(name,label));
+    this.resize(camera.width,camera.height);
+    scene.input.on(Phaser.Input.Events.POINTER_MOVE,this.onMove,this);
+    scene.input.on(Phaser.Input.Events.POINTER_UP,this.onUp,this);
+    scene.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE,this.onUp,this);
+    window.addEventListener("blur",this.onBlur);
   }
-
-  read(): InputFrame {
-    this.aimWorld.set(
-      this.player.x + this.aimDirection.x * 420,
-      this.player.y + this.aimDirection.y * 420,
+  read():InputFrame{
+    const settings=this.scene.registry.get("gameSettings") as GameSettings|undefined;
+    const mode:MobileAimMode=settings?.mobileAimMode??DEFAULT_SETTINGS.mobileAimMode;
+    const stickFiring=this.aimStick.engaged&&mode==="stick-auto-fire";
+    const wantsAssist=this.aimStick.engaged;
+    const best=this.selectTarget(
+      wantsAssist?this.facing:null,
+      wantsAssist?ASSIST_CONE_HALF_DEGREES:180,
+      mode==="auto-aim"||wantsAssist,
     );
-
-    const frame: InputFrame = {
-      move: this.moveVector,
-      aimWorld: this.aimWorld,
-      fireHeld: this.fireHeld,
-      firePressed: this.firePressed,
-      meleePressed: this.meleePressed,
-      reloadPressed: this.reloadPressed,
-      interactPressed: this.interactPressed,
-      slotPressed: 0,
-      cycleWeapon: this.cycleWeapon,
-      pausePressed: this.pausePressed,
+    if(best && (mode==="auto-aim"||wantsAssist)){
+      this.aim.set(best.x,best.y);
+      // Auto-aim mode updates facing when a zombie is acquired.
+      if(mode==="auto-aim"&&!wantsAssist){
+        this.facing.set(best.x-this.player.x,best.y-this.player.y).normalize();
+      }
+    }else{
+      this.aim.set(
+        this.player.x+this.facing.x*500,
+        this.player.y+this.facing.y*500,
+      );
+    }
+    const frame:InputFrame={
+      move:this.move,aimWorld:this.aim,
+      // Auto-fire generates a fresh pressed event each frame so semi-auto
+      // weapons repeat at their RPM while the right stick stays deflected.
+      fireHeld:this.fireDown||stickFiring,
+      firePressed:this.pendingFire||stickFiring,
+      meleePressed:this.melee,reloadPressed:this.reload,
+      interactPressed:this.interact,slotPressed:0,
+      cycleWeapon:this.swap,pausePressed:this.pause,
     };
-
-    this.firePressed = false;
-    this.meleePressed = false;
-    this.reloadPressed = false;
-    this.interactPressed = false;
-    this.cycleWeapon = 0;
-    this.pausePressed = false;
-
+    this.pendingFire=false;
+    this.melee=false;this.reload=false;this.interact=false;this.swap=0;this.pause=false;
     return frame;
   }
-
-  reset(): void {
-    this.moveVector.set(0, 0);
-
-    this.movementStick.pointerId = null;
-    this.aimStick.pointerId = null;
-
-    this.movementStick.knob.setPosition(
-      this.movementStick.center.x,
-      this.movementStick.center.y,
-    );
-
-    this.aimStick.knob.setPosition(
-      this.aimStick.center.x,
-      this.aimStick.center.y,
-    );
-
-    this.fireHeld = false;
-    this.firePressed = false;
-    this.firePointerId = null;
-
-    this.meleePressed = false;
-    this.reloadPressed = false;
-    this.interactPressed = false;
-    this.cycleWeapon = 0;
-    this.pausePressed = false;
+  reset():void{
+    this.move.set(0,0);
+    this.movementStick.pointerId=null;
+    this.movementStick.engaged=false;
+    this.aimStick.pointerId=null;
+    this.aimStick.engaged=false;
+    this.centerKnob(this.movementStick);
+    this.centerKnob(this.aimStick);
+    this.firePointerId=null;this.fireDown=false;this.pendingFire=false;
+    this.melee=false;this.reload=false;this.interact=false;this.swap=0;this.pause=false;
   }
-
-  destroy(): void {
-    this.reset();
-
-    this.scene.input.off(
-      Phaser.Input.Events.POINTER_MOVE,
-      this.onPointerMove,
-      this,
-    );
-
-    this.scene.input.off(
-      Phaser.Input.Events.POINTER_UP,
-      this.onPointerUp,
-      this,
-    );
-
-    for (const object of this.objects) {
-      object.destroy();
+  resize(width:number,height:number):void{
+    this.layout=mobileControlsLayout(width,height);
+    this.placeStick(this.movementStick,this.layout.move);
+    this.placeStick(this.aimStick,this.layout.aim);
+    for(const item of this.buttons){
+      const position=this.layout[item.name];
+      item.base.setPosition(position.x,position.y);
+      item.label.setPosition(position.x,position.y);
+      item.base.setRadius(item.name==="pause"?22:
+        item.name==="fire"?this.layout.actionRadius+4:this.layout.actionRadius);
+      item.label.setFontSize(item.name==="melee"?"11px":"12px");
     }
-
-    this.objects.length = 0;
   }
-
-  private createStick(
-    x: number,
-    y: number,
-    radius: number,
-    label: string,
-  ): StickState {
-    const base = this.scene.add
-      .circle(
-        x,
-        y,
-        radius,
-        0x111312,
-        0.48,
-      )
-      .setStrokeStyle(
-        3,
-        0xd8d3c7,
-        0.48,
-      )
-      .setScrollFactor(0)
-      .setDepth(4000)
-      .setInteractive();
-
-    const knob = this.scene.add
-      .circle(
-        x,
-        y,
-        29,
-        0xd6ad55,
-        0.42,
-      )
-      .setStrokeStyle(
-        2,
-        0xf0d27a,
-        0.65,
-      )
-      .setScrollFactor(0)
-      .setDepth(4001);
-
-    const text = this.scene.add
-      .text(
-        x,
-        y + radius + 17,
-        label,
-        {
-          fontFamily: "monospace",
-          fontSize: "12px",
-          color: "#d8d3c7",
-        },
-      )
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(4001)
-      .setAlpha(0.72);
-
-    const state: StickState = {
-      center: new Phaser.Math.Vector2(x, y),
-      radius,
-      pointerId: null,
-      base,
-      knob,
-    };
-
-    base.on(
-      Phaser.Input.Events.POINTER_DOWN,
-      (pointer: Phaser.Input.Pointer) => {
-        state.pointerId = pointer.id;
-        this.updateStick(
-          state,
-          pointer,
-          state === this.movementStick
-            ? "move"
-            : "aim",
-        );
-      },
-    );
-
-    this.objects.push(
-      base,
-      knob,
-      text,
-    );
-
+  destroy():void{
+    this.reset();
+    this.scene.input.off(Phaser.Input.Events.POINTER_MOVE,this.onMove,this);
+    this.scene.input.off(Phaser.Input.Events.POINTER_UP,this.onUp,this);
+    this.scene.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE,this.onUp,this);
+    window.removeEventListener("blur",this.onBlur);
+    for(const stick of [this.movementStick,this.aimStick]){
+      stick.base.destroy();stick.knob.destroy();stick.label.destroy();
+    }
+    for(const button of this.buttons){button.base.destroy();button.label.destroy();}
+  }
+  private readonly onBlur=():void=>this.reset();
+  private createStick(label:string):Stick{
+    const base=this.scene.add.circle(0,0,48,0x111312,.52)
+      .setStrokeStyle(2,0xd8d3c7,.62).setScrollFactor(0).setDepth(4000).setInteractive();
+    const knob=this.scene.add.circle(0,0,23,0xd6ad55,.54)
+      .setStrokeStyle(2,0xf0d27a,.8).setScrollFactor(0).setDepth(4001);
+    const text=this.scene.add.text(0,0,label,{
+      fontFamily:"monospace",fontSize:"10px",color:"#d8d3c7",
+    }).setOrigin(.5).setScrollFactor(0).setDepth(4001).setAlpha(.9);
+    const state:Stick={center:new Phaser.Math.Vector2(),radius:48,pointerId:null,
+      engaged:false,base,knob,label:text};
+    base.on("pointerdown",(pointer:Phaser.Input.Pointer)=>{
+      if(state.pointerId!==null)return;
+      state.pointerId=pointer.id;
+      this.updateStick(state,pointer);
+    });
     return state;
   }
-
-  private createActionButton(
-    x: number,
-    y: number,
-    radius: number,
-    label: string,
-    onDown: (
-      pointer: Phaser.Input.Pointer,
-    ) => void,
-  ): void {
-    const button = this.scene.add
-      .circle(
-        x,
-        y,
-        radius,
-        0x262822,
-        0.72,
-      )
-      .setStrokeStyle(
-        2,
-        0xd6ad55,
-        0.8,
-      )
-      .setScrollFactor(0)
-      .setDepth(4000)
+  private placeStick(
+    stick:Stick,
+    layout:{x:number;y:number;radius:number},
+  ):void{
+    stick.center.set(layout.x,layout.y);stick.radius=layout.radius;
+    stick.base.setPosition(layout.x,layout.y).setRadius(layout.radius);
+    stick.label.setPosition(layout.x,layout.y+layout.radius+11);
+    if(stick.pointerId===null)this.centerKnob(stick);
+  }
+  private centerKnob(stick:Stick):void{
+    stick.knob.setPosition(stick.center.x,stick.center.y);
+  }
+  private createButton(name:Action["name"],label:string):Action{
+    const base=this.scene.add.circle(0,0,26,0x252923,.83)
+      .setStrokeStyle(2,0xd6ad55,.9).setScrollFactor(0).setDepth(4000)
       .setInteractive();
-
-    const text = this.scene.add
-      .text(
-        x,
-        y,
-        label,
-        {
-          align: "center",
-          fontFamily: "monospace",
-          fontSize: label.length > 4 ? "11px" : "13px",
-          color: "#f0d27a",
-        },
-      )
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(4001);
-
-    button.on(
-      Phaser.Input.Events.POINTER_DOWN,
-      (
-        pointer: Phaser.Input.Pointer,
-      ) => {
-        button.setAlpha(1);
-        onDown(pointer);
-      },
-    );
-
-    button.on(
-      Phaser.Input.Events.POINTER_UP,
-      () => {
-        button.setAlpha(0.72);
-      },
-    );
-
-    button.on(
-      Phaser.Input.Events.POINTER_OUT,
-      () => {
-        button.setAlpha(0.72);
-      },
-    );
-
-    this.objects.push(
-      button,
-      text,
-    );
-  }
-
-  private onPointerMove(
-    pointer: Phaser.Input.Pointer,
-  ): void {
-    if (
-      this.movementStick.pointerId ===
-      pointer.id
-    ) {
-      this.updateStick(
-        this.movementStick,
-        pointer,
-        "move",
-      );
-    }
-
-    if (
-      this.aimStick.pointerId ===
-      pointer.id
-    ) {
-      this.updateStick(
-        this.aimStick,
-        pointer,
-        "aim",
-      );
-    }
-  }
-
-  private onPointerUp(
-    pointer: Phaser.Input.Pointer,
-  ): void {
-    if (
-      this.movementStick.pointerId ===
-      pointer.id
-    ) {
-      this.movementStick.pointerId = null;
-      this.moveVector.set(0, 0);
-      this.movementStick.knob.setPosition(
-        this.movementStick.center.x,
-        this.movementStick.center.y,
-      );
-    }
-
-    if (
-      this.aimStick.pointerId ===
-      pointer.id
-    ) {
-      this.aimStick.pointerId = null;
-      this.aimStick.knob.setPosition(
-        this.aimStick.center.x,
-        this.aimStick.center.y,
-      );
-    }
-
-    if (
-      this.firePointerId ===
-      pointer.id
-    ) {
-      this.firePointerId = null;
-      this.fireHeld = false;
-    }
-  }
-
-  private updateStick(
-    stick: StickState,
-    pointer: Phaser.Input.Pointer,
-    kind: "move" | "aim",
-  ): void {
-    const delta = new Phaser.Math.Vector2(
-      pointer.x - stick.center.x,
-      pointer.y - stick.center.y,
-    );
-
-    const distance = delta.length();
-
-    if (distance > stick.radius) {
-      delta
-        .normalize()
-        .scale(stick.radius);
-    }
-
-    stick.knob.setPosition(
-      stick.center.x + delta.x,
-      stick.center.y + delta.y,
-    );
-
-    const deadzone =
-      stick.radius * 0.2;
-
-    if (distance < deadzone) {
-      if (kind === "move") {
-        this.moveVector.set(0, 0);
+    const text=this.scene.add.text(0,0,label,{
+      fontFamily:"monospace",fontSize:"12px",color:"#f0d27a",
+    }).setOrigin(.5).setScrollFactor(0).setDepth(4001);
+    base.on("pointerdown",(pointer:Phaser.Input.Pointer)=>{
+      base.setAlpha(1);
+      switch(name){
+        case"fire":
+          if(this.firePointerId===null){
+            this.firePointerId=pointer.id;this.fireDown=true;this.pendingFire=true;
+          }break;
+        case"melee":this.melee=true;break;
+        case"reload":this.reload=true;break;
+        case"use":this.interact=true;break;
+        case"swap":this.swap=1;break;
+        case"pause":this.pause=true;break;
       }
-
+    });
+    base.on("pointerup",()=>base.setAlpha(.83));
+    base.on("pointerout",()=>base.setAlpha(.83));
+    return {name,base,label:text};
+  }
+  private onMove(pointer:Phaser.Input.Pointer):void{
+    if(this.movementStick.pointerId===pointer.id){
+      this.updateStick(this.movementStick,pointer);
+    }else if(this.aimStick.pointerId===pointer.id){
+      this.updateStick(this.aimStick,pointer);
+    }
+  }
+  private onUp(pointer:Phaser.Input.Pointer):void{
+    for(const stick of [this.movementStick,this.aimStick]){
+      if(stick.pointerId!==pointer.id)continue;
+      stick.pointerId=null;stick.engaged=false;this.centerKnob(stick);
+      if(stick===this.movementStick)this.move.set(0,0);
+    }
+    if(this.firePointerId===pointer.id){
+      this.firePointerId=null;this.fireDown=false;
+    }
+    for(const button of this.buttons)button.base.setAlpha(.83);
+  }
+  private updateStick(stick:Stick,pointer:Phaser.Input.Pointer):void{
+    let dx=pointer.x-stick.center.x;
+    let dy=pointer.y-stick.center.y;
+    const length=Math.hypot(dx,dy);
+    if(length>stick.radius){
+      const ratio=stick.radius/length;dx*=ratio;dy*=ratio;
+    }
+    stick.knob.setPosition(stick.center.x+dx,stick.center.y+dy);
+    if(length<stick.radius*.2){
+      stick.engaged=false;
+      if(stick===this.movementStick)this.move.set(0,0);
       return;
     }
-
-    if (kind === "aim") {
-      this.aimDirection
-        .copy(delta)
-        .normalize();
-      return;
+    stick.engaged=true;
+    if(stick===this.aimStick){
+      this.facing.set(dx,dy).normalize();
+    }else{
+      const snapped=Math.round(Math.atan2(dy,dx)/(Math.PI/4))*(Math.PI/4);
+      this.move.set(Math.round(Math.cos(snapped)),Math.round(Math.sin(snapped)));
     }
-
-    const angle = Math.atan2(
-      delta.y,
-      delta.x,
-    );
-
-    const snappedAngle =
-      Math.round(
-        angle / (Math.PI / 4),
-      ) *
-      (Math.PI / 4);
-
-    this.moveVector.set(
-      Math.round(
-        Math.cos(snappedAngle),
-      ),
-      Math.round(
-        Math.sin(snappedAngle),
-      ),
+  }
+  private selectTarget(
+    direction:Phaser.Math.Vector2|null,
+    halfCone:number,
+    enabled:boolean,
+  ):Zombie|null{
+    if(!enabled)return null;
+    const origin=new Phaser.Math.Vector2(this.player.x,this.player.y);
+    return nearestAimTarget(
+      origin,this.getZombies(),direction,TARGET_RANGE,halfCone,
+      (zombie)=>{
+        const toTarget=new Phaser.Math.Vector2(zombie.x-origin.x,zombie.y-origin.y);
+        const distance=toTarget.length();
+        if(distance<1)return true;
+        const hit=nearestRayHit(origin,toTarget,distance,this.arena.wallSegments);
+        return !hit||hit.distance>=distance-zombie.hitRadius;
+      },
     );
   }
 }

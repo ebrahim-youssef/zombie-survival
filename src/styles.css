@@ -1,64 +1,14 @@
-:root {
-  color-scheme: dark;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  background: #111312;
-  color: #ede8dc;
-}
-
-* { box-sizing: border-box; }
-
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  overscroll-behavior: none;
-  background: radial-gradient(circle at 50% 40%, #24261f 0%, #171817 45%, #0e0f0f 100%);
-}
-
-body { touch-action: none; user-select: none; -webkit-user-select: none; }
-
-#app {
-  width: 100%;
-  height: 100%;
-  height: 100dvh;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-}
-
-#game-root {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  touch-action: none;
-}
-
-canvas {
-  display: block;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  max-width: 100%;
-  max-height: 100%;
-  touch-action: none;
-}
-
-#orientation-hint {
-  display: none;
-}
-
-@media (pointer: coarse) and (orientation: portrait) {
-  #orientation-hint {
-    display: grid;
-    place-items: center;
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    padding: 32px;
-    color: #f0d27a;
-    background: #111312;
-    text-align: center;
-    font-size: 1.15rem;
-    line-height: 1.5;
-  }
+:root{color-scheme:dark;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#111312;color:#ede8dc}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#111312}
+body{touch-action:none;user-select:none;-webkit-user-select:none}
+#app{width:100%;height:100%;height:100dvh;display:flex;
+padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+#game-root{flex:1;min-width:0;min-height:0;position:relative;overflow:hidden;touch-action:none}
+#game-root canvas{display:block;image-rendering:pixelated;max-width:none;max-height:none;touch-action:none}
+#orientation-hint{display:none}
+@media (pointer:coarse) and (orientation:portrait){
+#orientation-hint{display:block;position:fixed;top:env(safe-area-inset-top,0px);left:50%;transform:translateX(-50%);
+z-index:10;padding:3px 10px;font-size:10px;color:#f0d27a;background:#111312cc;border-radius:0 0 6px 6px;
+pointer-events:none;white-space:nowrap}
 }

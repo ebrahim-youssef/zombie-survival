@@ -65,6 +65,32 @@ export class HUD {
     ).setOrigin(0.5, 0).setScrollFactor(0).setDepth(2000);
   }
 
+  resize(width:number,height:number,touch:boolean):void{
+    const compact=width<1000||height<560;
+    const padding=compact?10:24;
+    this.roundText.setPosition(padding,compact?7:22).setFontSize(compact?16:20);
+    this.waveStateText.setPosition(padding,compact?30:51).setFontSize(compact?10:13);
+    if(touch){
+      // Keep bottom corners clear for both joysticks and action buttons.
+      this.healthTrack.setPosition(padding,54).setSize(145,7);
+      this.healthFill.setPosition(padding,54).setSize(145,7);
+      this.healthPointsText.setPosition(padding,65).setFontSize(compact?11:16);
+      this.ammoText.setPosition(width-padding,65).setFontSize(compact?11:16);
+      this.inventoryText.setPosition(width/2,88).setFontSize(compact?11:15);
+      this.interactionText.setPosition(width/2,124).setFontSize(compact?12:17);
+      this.statusText.setPosition(width/2,153).setFontSize(compact?11:15);
+    }else{
+      this.healthTrack.setPosition(padding,height-74).setSize(210,9);
+      this.healthFill.setPosition(padding,height-74).setSize(210,9);
+      this.healthPointsText.setPosition(padding,height-48).setFontSize(compact?13:18);
+      this.ammoText.setPosition(width-padding,height-48).setFontSize(compact?13:18);
+      this.inventoryText.setPosition(width/2,height-45).setFontSize(compact?11:15);
+      this.interactionText.setPosition(width/2,height-105).setFontSize(compact?12:17);
+      this.statusText.setPosition(width/2,height-145).setFontSize(compact?11:15);
+    }
+    this.waveStateText.setWordWrapWidth(Math.max(220,width*.65));
+  }
+
   updateStatus(health: number, maxHealth: number, runState: RunState): void {
     this.healthPointsText.setText(
       "HP " + Math.ceil(health) + " / " + maxHealth +

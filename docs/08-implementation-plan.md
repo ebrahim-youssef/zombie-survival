@@ -57,3 +57,14 @@ The build/test pipeline is not a substitute for live gameplay acceptance.
 3. npm run build.
 4. Manual desktop/mobile acceptance.
 5. No recurring console errors or leaked effects.
+
+## Phase 9B — device QA and character art
+
+Status: **implementation in progress; physical-device acceptance pending**
+
+- Game-over input moved into an independent overlay scene with buttons and Enter/Space.
+- Full-viewport RESIZE removes 16:9 FIT letterboxing on mobile.
+- Camera zoom and UI/action positions respond to landscape/portrait resize.
+- Mobile right-stick firing and visible-target aim assist (default).
+- Optional auto-aim + fire button and manual input modes, stored locally.
+- Full-body angled character sprites and animation pass follows.
