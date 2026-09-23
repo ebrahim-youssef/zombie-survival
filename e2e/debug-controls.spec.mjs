@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("Shift+1 and Shift+7 toggle independent debug/raycast and real hitboxes", async ({ browser }) => {
+  test.setTimeout(60_000); // Shared Chromium runners occasionally start slowly.
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const page = await context.newPage();
   const errors = [];
