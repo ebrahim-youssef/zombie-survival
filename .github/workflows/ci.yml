@@ -44,7 +44,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cabin-art-preview
-          path: test-results/cabin-art-preview.png
+          path: |
+            test-results/cabin-art-preview.png
+            test-results/character-closeups.png
           retention-days: 14
           if-no-files-found: error
 

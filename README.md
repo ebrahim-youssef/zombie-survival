@@ -89,3 +89,15 @@ original pixel textures are generated deterministically in
 The provided screenshot is **a visual target**; the interactive map
 still uses the agreed four-window arena geometry rather than being a
 one-to-one recreation of the reference room.
+
+## Character art refinement
+
+The player and zombie have a new **soft-edged original arcade character pass**:
+64×64 raster frames drawn on a 32×32 logical design grid and displayed at
+1.5×. Their effective footprint stays **96×96 world pixels** so camera framing,
+feet-based hitboxes and weapon reach are unchanged. Rounded head contours,
+nonrectangular limbs, layered facial shading and more expressive action frames
+replace the former large block shapes. The cabin, props and HUD stay as-is;
+only the HUD portrait is scaled to fit its existing frame. On every CI run,
+`cabin-art-preview` now contains both a gameplay screenshot and a character
+close-up sheet for visual review.

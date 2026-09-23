@@ -141,3 +141,15 @@ The visual reference contains more hand-authored texture detail and
 lighting than this first original implementation. Compare in a
 real browser and iterate on production art only after accepting the
 playable composition; do not claim pixel-identical replication.
+
+## Approved character-only refinement (supersedes old 32px chunky character raster)
+
+User approved the cabin and HUD but found the player and zombies excessively
+blocky relative to the approved reference screenshot. Retain the 32×32 **design
+grid**, but supersample each direction/action into **64×64 original raster art**
+through Canvas2D and display at **1.5×** (unchanged 96×96 onscreen size).
+Heads have irregular rounded contours, graded shading, individual ears and
+cheeks; helmets, hair, torn clothing, joints and weapons are layered and use
+subtle antialiasing. Small highlight clusters keep an arcade pixel-art feel.
+No commercial sprites are reused. All existing 8 facings/action keys persist.
+Do not alter background, furniture or HUD visual direction in this pass.

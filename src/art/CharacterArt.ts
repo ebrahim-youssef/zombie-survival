@@ -1,241 +1,487 @@
-import Phaser from "phaser";
+import type Phaser from "phaser";
 import type { FacingDirection } from "../types/game";
 import { FACINGS, facingVector } from "./directions";
 
 /**
- * Original 32 × 32 arcade character art. All action/direction frames are
- * generated once, with pixel-snapped shapes. No licensed game assets.
- * Characters are displayed at 2× with a separate feet-centred hit circle.
+ * Original soft-edged arcade character art. The design is composed on a
+ * 32×32 logical grid and rasterized at 2× (64×64), then displayed at 1.5×.
+ * On-screen size stays 96×96, matching the former 32px sprites at 3×.
+ *
+ * This is intentionally NOT a smooth vector game: rounded silhouettes,
+ * layered 2–4px clusters and selective highlights retain pixel-art texture
+ * without large, square Minecraft-like heads and box-shaped limbs.
  */
 export type CharacterKind = "player" | "zombie";
 export type CharacterAction =
   | "idle" | "walk" | "shoot" | "melee" | "reload"
   | "attack" | "hurt" | "death";
-export const CHARACTER_W = 32;
-export const CHARACTER_H = 32;
-export const CHARACTER_FEET_Y = 28;
-export const CHARACTER_SCALE = 3;
+
+export const CHARACTER_LOGICAL_SIZE = 32;
+export const CHARACTER_W = 64;
+export const CHARACTER_H = 64;
+export const CHARACTER_FEET_Y = 56;
+export const CHARACTER_SCALE = 1.5;
+export const CHARACTER_DISPLAY_SIZE = CHARACTER_W * CHARACTER_SCALE;
+
 export const CHARACTER_FRAME_COUNTS: Record<
-  CharacterKind,
-  Partial<Record<CharacterAction, number>>
+  CharacterKind, Partial<Record<CharacterAction, number>>
 > = {
   player: { idle: 2, walk: 4, shoot: 2, melee: 2, reload: 2, hurt: 1, death: 3 },
   zombie: { idle: 2, walk: 4, attack: 2, hurt: 1, death: 3 },
 };
 
-interface Colors {
-  outline: number;
-  boot: number;
-  trouser: number;
-  trouserLight: number;
-  sleeve: number;
-  shirt: number;
-  shirtLight: number;
-  skin: number;
-  skinShadow: number;
-  hat: number;
-  hatLight: number;
-  eye: number;
-  mouth: number;
-  accent: number;
-}
-const COLORS: Record<CharacterKind, Colors> = {
-  player: {
-    outline: 0x171e22, boot: 0x21282b, trouser: 0x3e544b,
-    trouserLight: 0x627363, sleeve: 0x344e48, shirt: 0x3c594e,
-    shirtLight: 0x607768, skin: 0xe3af79, skinShadow: 0xb47d55,
-    hat: 0x455844, hatLight: 0x81916b, eye: 0x161d1f,
-    mouth: 0x67483a, accent: 0xd5ac5f,
-  },
-  zombie: {
-    outline: 0x202a2a, boot: 0x283145, trouser: 0x3c5368,
-    trouserLight: 0x627488, sleeve: 0x8e9a91, shirt: 0xb6bbac,
-    shirtLight: 0xd3cfb5, skin: 0x8d9c63, skinShadow: 0x566d49,
-    hat: 0x71824f, hatLight: 0xaab97a, eye: 0xeddf95,
-    mouth: 0x7d2428, accent: 0xb0433a,
-  },
-};
-
 export function characterTexture(
-  kind: CharacterKind,
-  facing: FacingDirection,
-  action: CharacterAction,
-  frame = 0,
+  kind: CharacterKind, facing: FacingDirection,
+  action: CharacterAction, frame = 0,
 ): string {
   const count = CHARACTER_FRAME_COUNTS[kind][action] ?? 1;
   return `character-${kind}-${facing}-${action}-${frame % count}`;
 }
 export function characterFrameCount(
-  kind: CharacterKind,
-  action: CharacterAction,
+  kind: CharacterKind, action: CharacterAction,
 ): number {
   return CHARACTER_FRAME_COUNTS[kind][action] ?? 1;
 }
 
+type Brush = CanvasRenderingContext2D;
+interface Palette {
+  ink: string; skin: string; skinLight: string; skinDark: string;
+  shirt: string; shirtLight: string; shirtShade: string;
+  trousers: string; trouserLight: string; boots: string;
+  hat: string; hatLight: string; hatShade: string;
+  eye: string; wound: string; metal: string;
+}
+const PLAYER: Palette = {
+  ink: "#20252a", skin: "#d4a074", skinLight: "#f0bd88",
+  skinDark: "#a76d4d", shirt: "#435c4d", shirtLight: "#79916b",
+  shirtShade: "#283f39", trousers: "#364f57",
+  trouserLight: "#5b7779", boots: "#222a2e",
+  hat: "#566647", hatLight: "#9da06c", hatShade: "#354b42",
+  eye: "#211e20", wound: "#9f503b", metal: "#65777c",
+};
+const ZOMBIE: Palette = {
+  ink: "#252c2c", skin: "#8e9c66", skinLight: "#b9c184",
+  skinDark: "#576b4e", shirt: "#c4c1aa", shirtLight: "#e0d7bd",
+  shirtShade: "#777e75", trousers: "#3d5064",
+  trouserLight: "#677c86", boots: "#242c36",
+  hat: "#627653", hatLight: "#98a476", hatShade: "#384c42",
+  eye: "#f6e9a0", wound: "#a03538", metal: "#657071",
+};
+
+function ellipse(
+  c: Brush, x: number, y: number, rx: number, ry: number,
+  fill: string, stroke?: string, lineWidth = 1.5,
+  rotate = 0,
+): void {
+  c.beginPath();
+  c.ellipse(x, y, rx, ry, rotate, 0, Math.PI * 2);
+  c.fillStyle = fill;
+  c.fill();
+  if (stroke) {
+    c.lineWidth = lineWidth; c.strokeStyle = stroke; c.stroke();
+  }
+}
+function blob(
+  c: Brush, points: ReadonlyArray<readonly [number, number]>,
+  fill: string, stroke?: string, lineWidth = 1.5,
+): void {
+  if (points.length < 2) return;
+  c.beginPath();
+  c.moveTo(points[0]![0], points[0]![1]);
+  for (let i = 1; i < points.length; i += 1) {
+    c.lineTo(points[i]![0], points[i]![1]);
+  }
+  c.closePath();
+  c.fillStyle = fill; c.fill();
+  if (stroke) { c.strokeStyle = stroke; c.lineWidth = lineWidth; c.stroke(); }
+}
+function curve(
+  c: Brush, from: readonly [number, number],
+  via: readonly [number, number], to: readonly [number, number],
+  width: number, color: string, outline?: string,
+): void {
+  const stroke = (paint: string, size: number): void => {
+    c.beginPath();
+    c.moveTo(...from);
+    c.quadraticCurveTo(...via, ...to);
+    c.strokeStyle = paint; c.lineWidth = size; c.stroke();
+  };
+  if (outline) stroke(outline, width + 2.4);
+  stroke(color, width);
+}
+function dash(
+  c: Brush, color: string, x: number, y: number,
+  w: number, h: number,
+): void {
+  c.fillStyle = color;
+  c.fillRect(Math.round(x), Math.round(y), w, h);
+}
+function rounded(
+  c: Brush, x: number, y: number, w: number, h: number,
+  radius: number, fill: string, stroke?: string, lineWidth = 1.5,
+): void {
+  const r = Math.min(radius, w / 2, h / 2);
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.lineTo(x + w - r, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r);
+  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r);
+  c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+  c.fillStyle = fill; c.fill();
+  if (stroke) { c.strokeStyle = stroke; c.lineWidth = lineWidth; c.stroke(); }
+}
+
+/** All frames are cached in the game's TextureManager, not rebuilt per tick. */
 export function ensureCharacterArt(scene: Phaser.Scene): void {
   if (scene.textures.exists(characterTexture("player", "s", "idle"))) return;
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
   for (const kind of ["player", "zombie"] as const) {
-    for (const direction of FACINGS) {
-      const actions = CHARACTER_FRAME_COUNTS[kind];
-      for (const action of Object.keys(actions) as CharacterAction[]) {
-        const count = actions[action] ?? 1;
+    for (const facing of FACINGS) {
+      for (const action of Object.keys(CHARACTER_FRAME_COUNTS[kind]) as CharacterAction[]) {
+        const count = characterFrameCount(kind, action);
         for (let frame = 0; frame < count; frame += 1) {
-          g.clear();
-          paintCharacter(g, COLORS[kind], kind, direction, action, frame);
-          g.generateTexture(
-            characterTexture(kind, direction, action, frame),
-            CHARACTER_W,
-            CHARACTER_H,
+          const canvas = document.createElement("canvas");
+          canvas.width = CHARACTER_W;
+          canvas.height = CHARACTER_H;
+          const c = canvas.getContext("2d", { alpha: true });
+          if (!c) throw new Error("Character art requires Canvas 2D.");
+          c.lineCap = "round";
+          c.lineJoin = "round";
+          paintCharacter(c, kind, facing, action, frame);
+          scene.textures.addCanvas(
+            characterTexture(kind, facing, action, frame), canvas,
           );
         }
       }
     }
   }
-  g.destroy();
 }
 
-function block(
-  g: Phaser.GameObjects.Graphics, color: number,
-  x: number, y: number, width: number, height: number,
-): void {
-  g.fillStyle(color, 1);
-  g.fillRect(Math.round(x), Math.round(y), width, height);
-}
-
+/** View-facing variation is structural: eyes, helmet, head and weapon move. */
 function paintCharacter(
-  g: Phaser.GameObjects.Graphics,
-  p: Colors, kind: CharacterKind, direction: FacingDirection,
+  c: Brush, kind: CharacterKind, facing: FacingDirection,
   action: CharacterAction, frame: number,
 ): void {
-  const [vx, vy] = facingVector(direction);
-  const right = vx > 0;
-  const left = vx < 0;
-  const rear = vy < 0;
-  const side = vx !== 0 && vy === 0;
-  const stride = action === "walk" ? [0, 2, 0, -2][frame % 4]! : 0;
-  const bob = action === "idle" ? frame % 2 : action === "walk" ? (frame % 2) : 0;
-  const hit = action === "hurt";
-  const slump = action === "death" ? 2 : 0;
+  const p = kind === "player" ? PLAYER : ZOMBIE;
+  const [vx, vy] = facingVector(facing);
+  const back = vy < 0;
+  const side = vy === 0 && vx !== 0;
+  const lateral = vx === 0 ? 0 : Math.sign(vx);
+  const step = action === "walk" ? [0, 3.2, 0, -3.2][frame % 4]! : 0;
+  const bob = action === "walk" ? (frame % 2) * 1.1
+    : action === "idle" ? frame * 0.65 : 0;
+  const headLean = (kind === "zombie" ? -2.5 : 0) + lateral * 1.7;
+  const attacking = action === "attack" || action === "melee";
+  const actionReach = attacking ? (frame === 0 ? 3 : 8) : 0;
+  const recoil = action === "shoot" && frame === 0 ? 3 : 0;
+  const hurt = action === "hurt";
+  const chestY = 34 + bob;
 
-  g.fillStyle(0x0c141a, 0.28);
-  g.fillEllipse(16, 28, 23, 5);
+  // Every frame uses a soft grounded shadow. The foot position is y=56.
+  ellipse(c, 32, 56.5, 19, 3.9, "rgba(8,17,18,.30)");
 
   if (action === "death" && frame >= 1) {
-    block(g, p.outline, 2, 23, 28, 6);
-    block(g, p.shirt, 5, 23, 13, 5);
-    block(g, p.skinShadow, 19, 21, 10, 8);
-    block(g, p.skin, 21, 22, 7, 5);
-    block(g, p.hat, 20, 19, 9, 3);
-    if (kind === "zombie") block(g, p.accent, 15, 27, 5, 2);
+    paintCorpse(c, p, kind, lateral, frame);
     return;
   }
 
-  // Two separately articulated feet make the shamble readable at 32px.
-  const leftLeg = stride;
-  const rightLeg = -stride;
-  block(g, p.outline, 8, 22 + leftLeg, 7, 7);
-  block(g, p.outline, 18, 22 + rightLeg, 7, 7);
-  block(g, p.trouser, 9, 22 + leftLeg, 5, 5);
-  block(g, p.trouserLight, 10, 23 + leftLeg, 2, 3);
-  block(g, p.trouser, 19, 22 + rightLeg, 5, 5);
-  block(g, p.trouserLight, 20, 23 + rightLeg, 2, 3);
-  block(g, p.boot, 7, 27 + leftLeg, 8, 3);
-  block(g, p.boot, 18, 27 + rightLeg, 8, 3);
+  // Animated bent legs and individually articulated rounded boots.
+  const legA = step, legB = -step;
+  curve(c, [26, 43 + bob], [24, 49 + bob], [24 - step * .5, 52 + legA],
+    7.6, p.trousers, p.ink);
+  curve(c, [37, 43 + bob], [40, 48 + bob], [40 + step * .5, 52 + legB],
+    8.2, p.trousers, p.ink);
+  curve(c, [25, 46 + bob], [24, 50 + bob], [24 - step * .5, 53 + legA],
+    2.4, p.trouserLight);
+  curve(c, [39, 46 + bob], [40, 49 + bob], [40 + step * .5, 52 + legB],
+    2, p.trouserLight);
+  ellipse(c, 22 - step * .5, 54 + legA, 7.1, 3.4, p.boots, p.ink, 1.7, -.13);
+  ellipse(c, 41 + step * .5, 54 + legB, 7.3, 3.5, p.boots, p.ink, 1.7, .10);
+  dash(c, p.trouserLight, 18 - step * .5, 52.6 + legA, 4, 1);
+  dash(c, p.trouserLight, 38 + step * .5, 52.6 + legB, 4, 1);
 
-  // Silhouette: arms out from a short jacket and an oversized head.
-  const reach = kind === "zombie" && action === "attack" ? 3 + frame * 2 : 0;
-  block(g, p.outline, 3 - reach, 14 + bob + slump, 8, 9);
-  block(g, p.sleeve, 4 - reach, 15 + bob + slump, 6, 7);
-  block(g, p.outline, 22 + reach, 14 + bob + slump, 8, 9);
-  block(g, p.sleeve, 23 + reach, 15 + bob + slump, 6, 7);
+  // Far-side arm is behind the vest and head, for a three-quarter depth cue.
+  const farArmEnd: readonly [number, number] =
+    kind === "zombie"
+      ? [13 - actionReach - step * .3, 41 + bob]
+      : [17 - step * .23, 42 + bob];
+  curve(c, [20, chestY], [12, 36 + bob], farArmEnd,
+    kind === "zombie" ? 8.6 : 8.2, p.shirtShade, p.ink);
   if (kind === "zombie") {
-    block(g, p.skin, 2 - reach, 19 + bob + slump, 4, 4);
-    block(g, p.skin, 27 + reach, 19 + bob + slump, 4, 4);
+    ellipse(c, farArmEnd[0] - 2, farArmEnd[1], 5.5, 4.2,
+      p.skinDark, p.ink, 1.4, -.25);
+    dash(c, p.skinLight, farArmEnd[0] - 4, farArmEnd[1] - 2, 4, 2);
   }
 
-  block(g, p.outline, 8, 13 + bob + slump, 17, 12);
-  block(g, p.shirt, 9, 14 + bob + slump, 15, 10);
-  block(g, p.shirtLight, rear ? 10 : 18, 15 + bob + slump, 5, 7);
-  block(g, p.outline, 10, 23 + bob + slump, 14, 2);
+  // Rounded and shaded short torso, unlike the old flat rectangular jacket.
+  c.beginPath();
+  c.moveTo(21, chestY - 3);
+  c.bezierCurveTo(14, chestY - 1, 15.4, chestY + 9, 20, chestY + 12);
+  c.quadraticCurveTo(32, chestY + 14, 43, chestY + 11);
+  c.bezierCurveTo(48, chestY + 3, 48, chestY - 1, 41, chestY - 3);
+  c.quadraticCurveTo(32, chestY - 7, 21, chestY - 3);
+  c.closePath();
+  c.fillStyle = p.shirt; c.fill();
+  c.strokeStyle = p.ink; c.lineWidth = 2.2; c.stroke();
+  ellipse(c, back ? 28 : 39, chestY + 2, 6, 8, p.shirtLight);
+  ellipse(c, 24, chestY + 7, 4.6, 5.5, p.shirtShade);
 
   if (kind === "player") {
-    block(g, 0x273e37, 12, 15 + bob, 9, 7);
-    block(g, 0x718877, 12, 16 + bob, 3, 4);
-    block(g, p.accent, 15, 22 + bob, 3, 2);
+    rounded(c, 24, chestY + 2, 17, 9.5, 2.5, "#344940", p.ink, 1.3);
+    rounded(c, 26, chestY + 4, 6, 5, 1, "#738568", p.ink, 1);
+    rounded(c, 34, chestY + 4, 5, 5, 1, "#68785e", p.ink, 1);
+    dash(c, "#d8bc77", 29, chestY + 9, 4, 1.6);
+    curve(c, [21, chestY - 3], [34, chestY + 5],
+      [43, chestY + 10], 1.8, "#b0a67b");
   } else {
-    block(g, p.accent, 18, 17 + bob, 4, 4);
-    block(g, p.skinShadow, 10, 19 + bob, 2, 4);
-    block(g, 0x616963, 21, 19 + bob, 3, 5);
+    // Frayed white shirt and organic, asymmetrical wounds.
+    blob(c, [[20, chestY + 6], [24, chestY + 8],
+      [23, chestY + 13], [17, chestY + 11]], "#a39d91");
+    blob(c, [[37, chestY + 2], [41, chestY + 1],
+      [43, chestY + 7], [38, chestY + 9], [36, chestY + 5]], p.wound);
+    dash(c, "#dfbd9c", 40, chestY + 4, 2, 2);
+    curve(c, [23, chestY + 12], [28, chestY + 16],
+      [35, chestY + 12], 2.2, "#656c66");
+    dash(c, "#b6b7a3", 21, chestY + 4, 3, 1);
+  }
+  // High contrast waist/belt separates upper body from short legs.
+  curve(c, [22, chestY + 12], [33, chestY + 14],
+    [42, chestY + 11], 3, p.ink);
+
+  const neckX = 32 + headLean;
+  const neckY = 27 + bob;
+  ellipse(c, neckX, neckY + 3, 7, 6, p.skinDark, p.ink, 1.5);
+
+  // Oversized *contoured* head. The irregular bezier silhouette and
+  // non-square cheeks match the approved softer arcade screenshot.
+  const hx = 31 + headLean;
+  const hy = (kind === "zombie" ? 17.9 : 17.5) + bob;
+  c.save();
+  c.translate(hx, hy);
+  c.rotate(kind === "zombie" ? -.055 + lateral * .075 : lateral * .04);
+  c.beginPath();
+  c.moveTo(-12, -5);
+  c.bezierCurveTo(-15, -14, 6, -16, 13, -7);
+  c.quadraticCurveTo(17, -1, 13, 8);
+  c.quadraticCurveTo(8, 15, -3, 13);
+  c.bezierCurveTo(-13, 12, -17, 1, -12, -5);
+  c.closePath();
+  c.fillStyle = p.skinDark; c.fill();
+  c.lineWidth = 2.1; c.strokeStyle = p.ink; c.stroke();
+  ellipse(c, -1.1, 1.9, 11.4, 10.7, p.skin);
+  ellipse(c, back ? -5 : 5, -1.2, 5.1, 7.3,
+    back ? p.skinDark : p.skinLight);
+  if (!back) {
+    // Rounded ear/cheek adds dimension. Rear views omit facial features.
+    ellipse(c, lateral > 0 ? -12 : 12, 3, 2.7, 4.1, p.skinDark, p.ink, 1.2);
   }
 
-  const shift = side ? (right ? 2 : -2) : (right ? 1 : left ? -1 : 0);
-  const hx = 8 + shift;
-  const hy = 2 + bob + slump;
+  if (kind === "player") paintHelmet(c, p, back, side, lateral);
+  else paintZombieScalp(c, p, back, lateral);
 
-  // Large squarish head with readable three-quarter face/helmet.
-  block(g, p.outline, hx - 1, hy + 2, 18, 13);
-  block(g, p.skinShadow, hx, hy + 4, 16, 11);
-  block(g, p.skin, hx + 2, hy + 5, 13, 9);
-  block(g, p.hat, hx - 1, hy, 18, 6);
-  block(g, p.hatLight, hx + 2, hy + 1, 11, 2);
-  block(g, p.outline, hx - 2, hy + 5, 20, 2);
-
-  if (rear) {
-    block(g, p.hat, hx + 2, hy + 7, 13, 8);
-    block(g, p.hatLight, hx + 4, hy + 8, 7, 2);
-  } else if (side) {
-    const eyeX = right ? hx + 12 : hx + 2;
-    block(g, p.eye, eyeX, hy + 9, 2, 2);
-    block(g, p.mouth, right ? hx + 12 : hx + 2, hy + 13, 4, 2);
-    if (kind === "zombie") {
-      block(g, 0x211918, right ? hx + 11 : hx + 1, hy + 11, 5, 4);
-      block(g, p.accent, right ? hx + 12 : hx + 2, hy + 13, 4, 2);
+  if (!back) {
+    if (side) {
+      const x = lateral > 0 ? 5.5 : -6.0;
+      ellipse(c, x, -0.4, 2.4, 2.7, p.eye, p.ink, .7);
+      if (kind === "zombie") ellipse(c, x + lateral * .3, -1, 1.3, 1.5, "#f5e9af");
+      curve(c, [x - lateral * 2, -4], [x, -5.5],
+        [x + lateral * 2.5, -3.8], 1.3,
+        kind === "zombie" ? p.skinDark : "#5f493d");
+      if (kind === "zombie") {
+        ellipse(c, x + lateral * .9, 7.1, 5.8, 3.7, "#2b2227", p.ink, 1);
+        dash(c, "#f0e9cf", x - 1.5, 5.9, 2.4, 1.6);
+        dash(c, p.wound, x + lateral * 2, 8.6, 3.1, 2);
+      } else {
+        curve(c, [x - lateral * 2, 7], [x, 7.8],
+          [x + lateral * 3, 6.5], 1, "#754c3f");
+        ellipse(c, x + lateral * 3, 4, 1.9, 1.5, p.skinLight);
+      }
+    } else {
+      const farEyeScale = lateral === 0 ? 1 : .78;
+      ellipse(c, -5 + lateral * 1.6, -1.2, 2 * farEyeScale,
+        2.25, p.eye, p.ink, .65);
+      ellipse(c, 4.6 + lateral * 1.8, -.8, 2.25, 2.25,
+        p.eye, p.ink, .65);
+      if (kind === "zombie") {
+        ellipse(c, -5 + lateral * 1.6, -1.9, 1, 1, "#fce8a3");
+        ellipse(c, 4.6 + lateral * 1.8, -1.6, 1, 1, "#fce8a3");
+        ellipse(c, 0.6, 7.1, 7.2, 4.8, "#282128", p.ink, 1.2);
+        dash(c, "#f2ebcf", -4, 4.7, 3, 2);
+        dash(c, "#f2ebcf", 1, 4.5, 3, 1.6);
+        ellipse(c, 1, 9, 3.3, 1.4, "#a73739");
+        dash(c, p.wound, -10, 7, 4, 2.2);
+      } else {
+        curve(c, [-8 + lateral, -4.1], [-5 + lateral, -5.5],
+          [-2 + lateral, -4], 1.4, "#655144");
+        curve(c, [2 + lateral, -3.8], [4.6 + lateral, -5],
+          [7 + lateral, -3.4], 1.3, "#655144");
+        blob(c, [[-.8, 1], [1.1, 1], [2, 4], [-1, 4]],
+          p.skinDark);
+        curve(c, [-2.3, 7.5], [.4, 8.1], [3.6, 7.1],
+          1, "#845443");
+      }
+    }
+    if (hurt) {
+      dash(c, p.wound, -9, 8, 4, 2);
+      dash(c, "#f0ceb2", 5, 6, 3, 1);
     }
   } else {
-    block(g, p.eye, hx + 4 + shift, hy + 9, 2, 2);
-    block(g, p.eye, hx + 11 + shift, hy + 9, 2, 2);
-    block(g, kind === "zombie" ? 0x291c19 : p.mouth, hx + 6, hy + 12, 7, 3);
-    if (kind === "zombie") {
-      block(g, p.accent, hx + 7, hy + 12, 5, 3);
-      block(g, 0xf1e4c5, hx + 7, hy + 12, 2, 1);
-      block(g, 0xf1e4c5, hx + 11, hy + 12, 2, 1);
-    }
+    // Distinct back of helmet/hair; no floating frontal face when aiming away.
+    ellipse(c, 0, 3, 8, 6, p.hatShade);
+    curve(c, [-7, 4], [0, 11], [7, 4], 2, p.hatLight);
   }
+  c.restore();
 
-  if (kind === "player") paintWeapon(g, direction, action, frame);
-  if (hit) {
-    block(g, p.accent, 6, 17, 3, 2);
-    block(g, p.accent, 25, 21, 4, 2);
+  // Near-side sleeve and organically jointed hand; different attack poses.
+  const nearEnd: readonly [number, number] = kind === "zombie"
+    ? [46 + actionReach + step * .2, 40 - actionReach * .36]
+    : [42 + recoil, 41 - (action === "reload" ? -3 : 0)];
+  curve(c, [42, chestY - 2], [50, 35 + bob],
+    [nearEnd[0] - 2, nearEnd[1] - 2], 9, p.shirt, p.ink);
+  curve(c, [44, chestY], [49, 35 + bob],
+    [nearEnd[0] - 1, nearEnd[1] - 4], 2.5, p.shirtLight);
+  ellipse(c, nearEnd[0], nearEnd[1], kind === "zombie" ? 5.5 : 4.2,
+    4.2, kind === "zombie" ? p.skin : p.skinDark, p.ink, 1.4, -.25);
+  if (kind === "zombie") {
+    const claw = action === "attack" ? 2.8 : 1.7;
+    for (let i = -1; i <= 1; i += 1) {
+      curve(c,
+        [nearEnd[0] + 1.6, nearEnd[1] + i * 1.5],
+        [nearEnd[0] + 4.6, nearEnd[1] + i * 2.1 - 1],
+        [nearEnd[0] + 4.2 + claw, nearEnd[1] + i * 3.3 - 1],
+        1.45, p.skinLight, p.ink);
+    }
+  } else {
+    // Gun drawn as a detailed dark metal silhouette, not a long solid bar.
+    paintGun(c, facing, action, frame, p);
+  }
+  // Tiny deliberately blocky highlight clusters preserve pixel-art texture.
+  dash(c, p.shirtLight, 22, chestY - 1, 3, 1.2);
+  dash(c, p.trouserLight, 35, 50 + bob, 2.4, 1.4);
+}
+
+function paintHelmet(
+  c: Brush, p: Palette, back: boolean, side: boolean, lateral: number,
+): void {
+  c.beginPath();
+  c.moveTo(-13.8, -5.4);
+  c.bezierCurveTo(-12, -17, 7, -18, 13.4, -7);
+  c.quadraticCurveTo(15, -1, 12, 1.3);
+  c.quadraticCurveTo(-1, -1, -13, 1);
+  c.closePath();
+  c.fillStyle = p.hat; c.fill();
+  c.strokeStyle = p.ink; c.lineWidth = 2.1; c.stroke();
+  ellipse(c, -2.8, -9.3, 7.1, 2.7, p.hatLight, undefined, 0, -.08);
+  curve(c, [-12, -2], [-2, -.9], [12, -2.3],
+    3.5, p.hatShade, p.ink);
+  if (!back) {
+    // Long rounded helmet brim over the face, with separated ear guards.
+    curve(c, [-12, -3.2], [1, -1.2],
+      [13.5 + lateral, -3.4], 3.7, p.hat, p.ink);
+    ellipse(c, side && lateral > 0 ? -10.8 : 10.8,
+      3, 2.4, 4.6, p.hatShade, p.ink, 1.1);
+    dash(c, "#d7b37b", -8, -4.6, 2, 1.3);
+    dash(c, "#8d9b6e", 5, -9.6, 2.2, 1.2);
+  } else {
+    curve(c, [-10.3, 0], [0, 3], [10, 0],
+      3, p.hatShade, p.ink);
+    dash(c, "#b3b17d", -2, -12, 3, 1.6);
   }
 }
 
-function paintWeapon(
-  g: Phaser.GameObjects.Graphics,
-  direction: FacingDirection,
-  action: CharacterAction,
-  frame: number,
+function paintZombieScalp(
+  c: Brush, p: Palette, back: boolean, lateral: number,
 ): void {
-  const [vx, vy] = facingVector(direction);
+  blob(c, [
+    [-12, -5], [-13, -12], [-7, -11],
+    [-3, -15], [1, -11], [5, -14], [12, -8],
+    [13, -3], [9, -5], [5, -7], [0, -4], [-5, -6],
+  ], p.hatShade, p.ink, 1.4);
+  blob(c, [
+    [-7, -10], [-2, -12], [3, -8], [9, -9], [10, -6],
+    [6, -5], [0, -7], [-4, -4],
+  ], p.hat);
+  if (!back) {
+    ellipse(c, -9, 4, 2.2, 3, p.wound, undefined, 0, -.2);
+    curve(c, [3, -10], [6 + lateral, -6], [9, -4],
+      1.2, p.skinDark);
+    dash(c, "#bdc598", -5, -9, 3, 1);
+    dash(c, "#657248", 7, -7, 2, 2);
+  }
+}
+
+function paintGun(
+  c: Brush, facing: FacingDirection,
+  action: CharacterAction, frame: number,
+  p: Palette,
+): void {
+  const [vx, vy] = facingVector(facing);
   const length = Math.hypot(vx, vy) || 1;
-  const x = vx / length;
-  const y = vy / length;
-  const reach = action === "melee" ? 13 : 10;
-  const sx = 16, sy = 20;
-  const ex = Math.round(sx + x * reach);
-  const ey = Math.round(sy + y * reach * 0.65);
-  g.lineStyle(4, 0x121b1d, 1);
-  g.lineBetween(sx, sy, ex, ey);
-  g.lineStyle(1, 0x87938b, 1);
-  g.lineBetween(sx + x * 2, sy + y, ex, ey);
-  block(g, 0x1a2324, sx - 2, sy - 1, 5, 4);
+  const dx = vx / length;
+  const dy = vy / length;
+  // Weapon sits in front of the character's chest, angled by facing.
+  const sx = 31, sy = 39;
+  const reach = action === "melee" ? 27 : 21;
+  const recoil = action === "shoot" && frame === 0 ? 2.5 : 0;
+  const vertical = action === "reload" ? 5 : 0;
+  const ex = sx + dx * (reach - recoil);
+  const ey = sy + dy * (reach - recoil) * .71 + vertical;
+  curve(c, [sx - dx * 4, sy - dy * 4],
+    [sx + dx * 7, sy + dy * 7],
+    [ex, ey], 7.4, "#1e2729", p.ink);
+  curve(c, [sx + dx * 3, sy + dy * 3 - 1],
+    [sx + dx * 10, sy + dy * 9 - 1],
+    [ex - dx * 3, ey - dy * 2],
+    2.3, p.metal);
+  const nx = -dy, ny = dx;
+  blob(c, [
+    [sx - dx * 6 + nx * 2, sy - dy * 4 + ny * 2],
+    [sx + nx * 6, sy + ny * 6],
+    [sx + dx * 7 + nx * 6, sy + dy * 6 + ny * 6],
+    [sx + dx * 7 - nx * 3, sy + dy * 6 - ny * 3],
+  ], "#31383a", p.ink, 1.2);
+  curve(c, [sx + dx * 3, sy + dy * 3 + 2],
+    [sx - dx * 2 + nx * 4, sy + ny * 5],
+    [sx + nx * 5, sy + ny * 8],
+    2.5, "#2e3737", p.ink);
+  ellipse(c, sx + nx * 3, sy + ny * 3, 3.4, 2.4, p.skin, p.ink, 1);
   if (action === "shoot" && frame === 0) {
-    block(g, 0xffca4e, ex - 2, ey - 2, 5, 5);
-    block(g, 0xfff1ab, ex, ey - 1, 3, 3);
+    ellipse(c, ex + dx * 4, ey + dy * 4, 4.9, 3.4, "#ffc855");
+    ellipse(c, ex + dx * 5.4, ey + dy * 4.8,
+      2.2, 1.9, "#fff3ac");
   }
-  if (action === "melee" && frame === 0) {
-    g.lineStyle(2, 0xf4e4bb, 1);
-    g.lineBetween(ex - y * 5, ey + x * 5, ex + y * 5, ey - x * 5);
+  if (action === "melee") {
+    curve(c,
+      [ex - dy * 7, ey + dx * 7],
+      [ex + dx * 8, ey + dy * 5],
+      [ex + dy * 7, ey - dx * 7],
+      2.8, "#f5dfb2");
   }
-  if (action === "reload") block(g, 0x101a20, sx - 1, sy + 2 + frame, 3, 6);
+  if (action === "reload") dash(c, "#d4bb7e", sx - 4, sy + 9 + frame, 3, 5);
+}
+
+function paintCorpse(
+  c: Brush, p: Palette, kind: CharacterKind,
+  lateral: number, frame: number,
+): void {
+  c.save();
+  c.translate(31, 53);
+  c.rotate((lateral === 0 ? 1 : lateral) * (frame === 1 ? .15 : .25));
+  ellipse(c, -6, 0, 19, 5, "rgba(5,15,14,.25)");
+  curve(c, [-20, 1], [-9, 0], [11, -4], 9, p.trousers, p.ink);
+  ellipse(c, -23, 2, 6.5, 3.8, p.boots, p.ink);
+  ellipse(c, -9, -6, 13, 5.5, p.shirt, p.ink, 1.6, -.12);
+  curve(c, [-5, -9], [5, -12], [18, -9], 6.4, p.shirtShade, p.ink);
+  ellipse(c, 19, -9, 10.3, 7.5, p.skin, p.ink, 2);
+  ellipse(c, 20, -15, 9.7, 4.3,
+    kind === "player" ? p.hat : p.hatShade, p.ink, 1.2);
+  if (kind === "zombie") {
+    ellipse(c, 24, -7, 2.6, 2, "#61262a");
+    dash(c, "#efeac1", 25, -8, 3, 1.4);
+  }
+  c.restore();
 }

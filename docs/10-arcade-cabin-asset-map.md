@@ -56,3 +56,13 @@ That screenshot is a **reviewable approximation**, not an artistic
 acceptance decision. Run final visual checks on desktop and real mobile
 devices, comparing the in-game scale, occlusion, target readability,
 window alignment, control safety and framerate.
+
+## Refined player/zombie raster format (current)
+
+The earlier 32×32 **source** art was replaced; 32×32 is now the conceptual
+design grid, rendered at **64×64** for more organic contours and detail. The
+new presentation scale is **1.5×**, preserving the original **96px rendered
+size**, and feet origin is **56/64**. The player/zombie physics circle offsets
+remain unchanged because display width and feet display-origin remain 96px and
+84px respectively. Only character assets and portrait framing changed.
+Review both `cabin-art-preview.png` and `character-closeups.png` from Actions.

@@ -42,7 +42,7 @@ export class HUD {
     this.portraitFrame = scene.add.image(40, 40, HUD_TEXTURES.portraitFrame)
       .setDepth(2010).setScrollFactor(0);
     this.portrait = scene.add.image(40, 42, characterTexture("player", "s", "idle"))
-      .setDepth(2011).setScale(1.45).setScrollFactor(0);
+      .setDepth(2011).setScale(.725).setScrollFactor(0);
     for (let i = 0; i < 3; i += 1) {
       this.hearts.push(
         scene.add.image(100 + i * 30, 24, HUD_TEXTURES.heart)
@@ -109,7 +109,7 @@ export class HUD {
     const s = compact ? .74 : 1;
     this.portraitFrame.setPosition(margin + 28 * s, margin + 28 * s).setScale(s);
     this.portrait.setPosition(margin + 28 * s, margin + 30 * s)
-      .setScale(1.45 * s);
+      .setScale(.725 * s);
     for (let i = 0; i < this.hearts.length; i += 1) {
       this.hearts[i]!.setPosition(margin + 72 * s + i * 28 * s, margin + 13 * s)
         .setScale(1.5 * s);

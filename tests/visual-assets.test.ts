@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  characterFrameCount, CHARACTER_W, CHARACTER_H, CHARACTER_SCALE,
+  characterFrameCount, CHARACTER_W, CHARACTER_H, CHARACTER_SCALE, CHARACTER_DISPLAY_SIZE,
 } from "../src/art/CharacterArt";
 import { ENV_TEXTURES, CABIN_PALETTE, HUD_TEXTURES } from "../src/art/ArtManifest";
 
 
 describe("original arcade art contracts",()=>{
-  it("uses chunky native 32x32 character frames with 2x nearest-neighbour display",()=>{
-    expect([CHARACTER_W,CHARACTER_H,CHARACTER_SCALE]).toEqual([32,32,3]);
+  it("rasterizes 32-unit designs at 64px with unchanged world silhouette",()=>{
+    expect([CHARACTER_W,CHARACTER_H,CHARACTER_SCALE]).toEqual([64,64,1.5]);
+    expect(CHARACTER_DISPLAY_SIZE).toBe(96);
     expect(characterFrameCount("player","walk")).toBe(4);
     expect(characterFrameCount("zombie","walk")).toBe(4);
   });
