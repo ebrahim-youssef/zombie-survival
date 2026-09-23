@@ -1,6 +1,7 @@
 import type Phaser from "phaser";
 import type { FacingDirection } from "../types/game";
 import { FACINGS, facingVector } from "./directions";
+import { CHARACTER_PALETTE } from "./ArtManifest";
 
 /**
  * Original soft-edged arcade character art. The design is composed on a
@@ -51,22 +52,8 @@ interface Palette {
   hat: string; hatLight: string; hatShade: string;
   eye: string; wound: string; metal: string;
 }
-const PLAYER: Palette = {
-  ink: "#20252a", skin: "#d4a074", skinLight: "#f0bd88",
-  skinDark: "#a76d4d", shirt: "#435c4d", shirtLight: "#79916b",
-  shirtShade: "#283f39", trousers: "#364f57",
-  trouserLight: "#5b7779", boots: "#222a2e",
-  hat: "#566647", hatLight: "#9da06c", hatShade: "#354b42",
-  eye: "#211e20", wound: "#9f503b", metal: "#65777c",
-};
-const ZOMBIE: Palette = {
-  ink: "#252c2c", skin: "#8e9c66", skinLight: "#b9c184",
-  skinDark: "#576b4e", shirt: "#c4c1aa", shirtLight: "#e0d7bd",
-  shirtShade: "#777e75", trousers: "#3d5064",
-  trouserLight: "#677c86", boots: "#242c36",
-  hat: "#627653", hatLight: "#98a476", hatShade: "#384c42",
-  eye: "#f6e9a0", wound: "#a03538", metal: "#657071",
-};
+const PLAYER: Palette = CHARACTER_PALETTE.survivor;
+const ZOMBIE: Palette = CHARACTER_PALETTE.zombie;
 
 function ellipse(
   c: Brush, x: number, y: number, rx: number, ry: number,
@@ -263,6 +250,9 @@ function paintCharacter(
   c.save();
   c.translate(hx, hy);
   c.rotate(kind === "zombie" ? -.055 + lateral * .075 : lateral * .04);
+  // Original three-quarter adventure proportion: a large but no longer
+  // oversized face. Frame, feet and Stage 2 damage geometry stay unchanged.
+  c.scale(.86, .86);
   c.beginPath();
   c.moveTo(-12, -5);
   c.bezierCurveTo(-15, -14, 6, -16, 13, -7);

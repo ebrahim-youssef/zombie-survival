@@ -3,6 +3,12 @@ import {
   CABIN_PALETTE, ENV_TEXTURES, ensureEnvironmentArt,
 } from "../art/EnvironmentArt";
 import type { Segment } from "../utils/geometry";
+import { WORLD_DEPTH, tallPropDepth } from "../art/worldLayers";
+import {
+  DEFAULT_ARENA_DIMENSIONS, cabinVertices, cabinHalfWidthAtY,
+  windowEdgeRatio, windowGapFractions,
+  type ArenaDimensions,
+} from "./arenaGeometry";
 
 export type WindowId =
   | "north-east" | "south-east" | "south-west" | "north-west";
@@ -16,21 +22,12 @@ export interface ArenaInteractionLayout {
   mr6WallBuy: Phaser.Math.Vector2;
   mysteryBox: Phaser.Math.Vector2;
 }
-interface ArenaOptions {
-  centerX: number;
-  centerY: number;
-  halfWidth: number;
-  halfHeight: number;
-  windowGapRatio: number;
-}
-const DEFAULT_OPTIONS: ArenaOptions = {
-  centerX: 900, centerY: 550, halfWidth: 730, halfHeight: 330,
-  windowGapRatio: 0.18,
-};
+type ArenaOptions = ArenaDimensions;
+const DEFAULT_OPTIONS = DEFAULT_ARENA_DIMENSIONS;
 
 /**
- * Decorative four-window cabin with a trapezoid cutaway projection.
- * Window/shot segments and player clamping share the same four boundaries.
+ * Original angled-adventure cabin with a wide, shallow-taper cutaway.
+ * Window visuals, collision segments, and player bounds share one polygon.
  * The warm wood panels / blue exterior / pixel props are original art.
  */
 export class Arena {
@@ -42,10 +39,13 @@ export class Arena {
   readonly interactions: ArenaInteractionLayout;
 
   private readonly graphics: Phaser.GameObjects.Graphics;
+  private readonly wallGraphics: Phaser.GameObjects.Graphics;
+  private readonly frontWallGraphics: Phaser.GameObjects.Graphics;
   private readonly exterior: Phaser.GameObjects.Graphics;
   private readonly illumination: Phaser.GameObjects.Graphics;
   private readonly props: Phaser.GameObjects.GameObject[] = [];
   private readonly vertices: readonly Phaser.Math.Vector2[];
+  private readonly dimensions: ArenaDimensions;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -54,34 +54,21 @@ export class Arena {
     const config = { ...DEFAULT_OPTIONS, ...options };
     ensureEnvironmentArt(scene);
 
+    this.dimensions = config;
     this.center = new Phaser.Math.Vector2(config.centerX, config.centerY);
     this.halfWidth = config.halfWidth;
     this.halfHeight = config.halfHeight;
-    this.vertices = [
-      new Phaser.Math.Vector2(
-        this.center.x - this.halfWidth * .49,
-        this.center.y - this.halfHeight * .76,
-      ),
-      new Phaser.Math.Vector2(
-        this.center.x + this.halfWidth * .49,
-        this.center.y - this.halfHeight * .76,
-      ),
-      new Phaser.Math.Vector2(
-        this.center.x + this.halfWidth,
-        this.center.y + this.halfHeight * .96,
-      ),
-      new Phaser.Math.Vector2(
-        this.center.x - this.halfWidth,
-        this.center.y + this.halfHeight * .96,
-      ),
-    ];
-      this.windows = this.createWindows();
-    this.wallSegments = this.createWallSegments(config.windowGapRatio);
+    this.vertices = cabinVertices(config).map(p => new Phaser.Math.Vector2(p.x,p.y));
+    this.windows = this.createWindows();
+    this.wallSegments = this.createWallSegments();
     this.interactions = this.createInteractionLayout();
 
-    this.exterior = scene.add.graphics().setDepth(-55);
-    this.graphics = scene.add.graphics().setDepth(-28);
-    this.illumination = scene.add.graphics().setDepth(-15);
+    this.exterior = scene.add.graphics().setDepth(WORLD_DEPTH.exterior);
+    this.graphics = scene.add.graphics().setDepth(WORLD_DEPTH.floor);
+    this.wallGraphics = scene.add.graphics().setDepth(WORLD_DEPTH.rearWall);
+    this.frontWallGraphics = scene.add.graphics().setDepth(WORLD_DEPTH.foregroundWall);
+    this.illumination = scene.add.graphics().setDepth(WORLD_DEPTH.groundLight);
+
     this.drawExterior();
     this.drawFloor();
     this.drawWalls();
@@ -92,11 +79,13 @@ export class Arena {
     return this.center.clone();
   }
   getCameraBounds(margin = 120): Phaser.Geom.Rectangle {
+    const top = this.vertices[0]!;
+    const bottom = this.vertices[2]!;
     return new Phaser.Geom.Rectangle(
       this.center.x - this.halfWidth - margin,
-      this.center.y - this.halfHeight - margin,
+      top.y - margin,
       this.halfWidth * 2 + margin * 2,
-      this.halfHeight * 2 + margin * 2,
+      bottom.y - top.y + margin * 2,
     );
   }
   constrainPlayer(
@@ -113,10 +102,7 @@ export class Arena {
     player.setPosition(x, y);
   }
   private floorHalfWidthAtY(y: number): number {
-    const topY = this.vertices[0]!.y;
-    const bottomY = this.vertices[2]!.y;
-    const t = Phaser.Math.Clamp((y - topY) / (bottomY - topY), 0, 1);
-    return Phaser.Math.Linear(this.halfWidth * .49, this.halfWidth, t);
+    return cabinHalfWidthAtY(y,this.dimensions);
   }
   
   destroy(): void {
@@ -125,6 +111,8 @@ export class Arena {
     this.exterior.destroy();
     this.illumination.destroy();
     this.graphics.destroy();
+    this.wallGraphics.destroy();
+    this.frontWallGraphics.destroy();
   }
 
   private createWindows(): readonly ArenaWindow[] {
@@ -139,13 +127,17 @@ export class Arena {
       this.createWindow("north-west", bottomLeft, topLeft),
     ];
   }
-  
+
   private createWindow(
     id: WindowId, start: Phaser.Math.Vector2, end: Phaser.Math.Vector2,
   ): ArenaWindow {
     // Side windows sit closer to the rear of the cabin, matching the
     // approved three-quarter room composition.
-    const t = id === "south-east" ? .38 : id === "north-west" ? .62 : .5;
+    const edgeIndex = {
+      "north-east": 0, "south-east": 1,
+      "south-west": 2, "north-west": 3,
+    } as const;
+    const t = windowEdgeRatio(edgeIndex[id]);
     const center = Phaser.Math.LinearXY(start, end, t);
     const outward = center.clone().subtract(this.center).normalize();
     return {
@@ -153,19 +145,19 @@ export class Arena {
       outsideSpawn: center.clone().add(outward.scale(90)),
     };
   }
-  private createWallSegments(gapRatio: number): readonly Segment[] {
+  private createWallSegments(): readonly Segment[] {
     const [topLeft, topRight, bottomRight, bottomLeft] = this.vertices;
     if (!topLeft || !topRight || !bottomRight || !bottomLeft) {
       throw Error("Missing cabin corners.");
     }
     return [
-      ...this.splitWall(topLeft, topRight, gapRatio),
-      ...this.splitWall(topRight, bottomRight, gapRatio, .38),
-      ...this.splitWall(bottomRight, bottomLeft, gapRatio),
-      ...this.splitWall(bottomLeft, topLeft, gapRatio, .62),
+      ...this.splitWall(topLeft, topRight, 0),
+      ...this.splitWall(topRight, bottomRight, 1),
+      ...this.splitWall(bottomRight, bottomLeft, 2),
+      ...this.splitWall(bottomLeft, topLeft, 3),
     ];
   }
-  
+
   private createInteractionLayout(): ArenaInteractionLayout {
     return {
       kudaWallBuy: new Phaser.Math.Vector2(
@@ -174,19 +166,24 @@ export class Arena {
       mr6WallBuy: new Phaser.Math.Vector2(
         this.center.x, this.center.y + this.halfHeight * .83,
       ),
-      mysteryBox: new Phaser.Math.Vector2(this.center.x + 205, this.center.y - 125),
+      mysteryBox: new Phaser.Math.Vector2(
+        this.center.x + this.halfWidth * .29,
+        this.center.y - this.halfHeight * .38,
+      ),
     };
   }
   private splitWall(
     start: Phaser.Math.Vector2,
     end: Phaser.Math.Vector2,
-    gapRatio: number,
-    midpoint = .5,
+    edgeIndex: number,
   ): readonly [Segment, Segment] {
-    const halfGap = gapRatio / 2;
+    const length = Phaser.Math.Distance.Between(start.x,start.y,end.x,end.y);
+    const [low, high] = windowGapFractions(
+      length, edgeIndex, this.dimensions.windowOpeningWidth,
+    );
     return [
-      { start: start.clone(), end: Phaser.Math.LinearXY(start, end, midpoint - halfGap) },
-      { start: Phaser.Math.LinearXY(start, end, midpoint + halfGap), end: end.clone() },
+      { start: start.clone(), end: Phaser.Math.LinearXY(start, end, low) },
+      { start: Phaser.Math.LinearXY(start, end, high), end: end.clone() },
     ];
   }
 
@@ -232,7 +229,7 @@ export class Arena {
     g.fillStyle(CABIN_PALETTE.plankDark, 1);
     g.fillPoints([...this.vertices], true);
     // Uncluttered warm cabin floor, narrowing toward the rear wall.
-    g.fillStyle(0x76442c, 1);
+    g.fillStyle(CABIN_PALETTE.plank, 1);
     g.fillPoints([
       new Phaser.Math.Vector2(tl.x + 7, tl.y + 8),
       new Phaser.Math.Vector2(tr.x - 7, tr.y + 8),
@@ -244,8 +241,9 @@ export class Arena {
       const topSpan = this.floorHalfWidthAtY(y) - 13;
       const bottomSpan = this.floorHalfWidthAtY(y + 23) - 13;
       if (topSpan < 20) continue;
-      const shade = row % 3 === 0 ? 0x905536
-        : row % 3 === 1 ? 0x845032 : 0x995c36;
+      const shade = row % 3 === 0 ? CABIN_PALETTE.plankLight
+        : row % 3 === 1 ? CABIN_PALETTE.plank
+        : CABIN_PALETTE.plankDark;
       g.fillStyle(shade, .82);
       g.fillPoints([
         new Phaser.Math.Vector2(this.center.x - topSpan, y + 1),
@@ -278,9 +276,9 @@ export class Arena {
       }
     }
 
-    g.lineStyle(22, 0x242127, 1);
+    g.lineStyle(22, CABIN_PALETTE.woodShadow, 1);
     g.strokePoints([...this.vertices], true, true);
-    g.lineStyle(6, 0xae7648, 1);
+    g.lineStyle(6, CABIN_PALETTE.woodEdge, 1);
     g.strokePoints([...this.vertices], true, true);
     for (const [dx, dy] of [
       [-320, -60], [-445, 90], [340, 124],
@@ -296,7 +294,7 @@ export class Arena {
     }
   }
 
-  
+
   private drawWalls(): void {
     const [tl, tr, br, bl] = this.vertices;
     if (!tl || !tr || !br || !bl) return;
@@ -307,51 +305,52 @@ export class Arena {
       // Three tall readable walls, with a low cutaway foreground ledge.
       const back = index !== 2;
       const rise = index === 0 ? 88 : back ? 92 : 22;
+      const g = back ? this.wallGraphics : this.frontWallGraphics;
       const wallColor = index === 0 ? 0x63412f
         : index === 1 ? 0x55372c : index === 3 ? 0x73432d : 0x3e302c;
-      this.graphics.fillStyle(wallColor, 1);
-      this.graphics.fillPoints([
+      g.fillStyle(wallColor, 1);
+      g.fillPoints([
         a.clone(), b.clone(),
         new Phaser.Math.Vector2(b.x, b.y - rise),
         new Phaser.Math.Vector2(a.x, a.y - rise),
       ], true);
-      this.graphics.lineStyle(back ? 12 : 8, 0x221d21, 1);
-      this.graphics.lineBetween(a.x, a.y - rise, b.x, b.y - rise);
-      this.graphics.lineStyle(3, 0xb78350, .9);
-      this.graphics.lineBetween(a.x, a.y - rise + 4, b.x, b.y - rise + 4);
+      g.lineStyle(back ? 12 : 8, CABIN_PALETTE.woodShadow, 1);
+      g.lineBetween(a.x, a.y - rise, b.x, b.y - rise);
+      g.lineStyle(3, CABIN_PALETTE.woodEdge, .9);
+      g.lineBetween(a.x, a.y - rise + 4, b.x, b.y - rise + 4);
       const length = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
       for (let offset = 35; offset < length - 25; offset += 54) {
         const at = Phaser.Math.LinearXY(a, b, offset / length);
-        this.graphics.lineStyle(2, 0x362521, .74);
-        this.graphics.lineBetween(
+        g.lineStyle(2, 0x362521, .74);
+        g.lineBetween(
           at.x, at.y - rise + 10, at.x, at.y - 4,
         );
-        this.graphics.lineStyle(1, 0xa16a40, .6);
-        this.graphics.lineBetween(
+        g.lineStyle(1, 0xa16a40, .6);
+        g.lineBetween(
           at.x + 4, at.y - rise + 10, at.x + 4, at.y - 6,
         );
       }
-      this.drawWindow(this.windows[index]!, a, b, back);
+      this.drawWindow(g, this.windows[index]!, a, b, back);
     });
   }
 
-  
+
   private drawWindow(
+    g: Phaser.GameObjects.Graphics,
     window: ArenaWindow,
     start: Phaser.Math.Vector2,
     end: Phaser.Math.Vector2,
     back: boolean,
   ): void {
-    const g = this.graphics;
     const tangent = end.clone().subtract(start).normalize();
     const raise = back ? 56 : 31;
     const a = window.center.clone().add(tangent.clone().scale(-57));
     const b = window.center.clone().add(tangent.clone().scale(57));
     const au = a.clone().add(new Phaser.Math.Vector2(0, -raise));
     const bu = b.clone().add(new Phaser.Math.Vector2(0, -raise));
-    g.fillStyle(0x142638, 1);
+    g.fillStyle(CABIN_PALETTE.night, 1);
     g.fillPoints([a, b, bu, au], true);
-    g.fillStyle(0x274363, .83);
+    g.fillStyle(CABIN_PALETTE.nightBlue, .83);
     g.fillPoints([
       a.clone().add(tangent.clone().scale(6)),
       b.clone().add(tangent.clone().scale(-6)),
@@ -385,19 +384,42 @@ export class Arena {
     );
   }
 
+  /** Flat art never y-sorts. Only tall scenery may overlap actors. */
   private prop(
     texture: string, x: number, y: number,
     scale: number, offset = 0,
   ): Phaser.GameObjects.Image {
     const image = this.scene.add.image(x, y, texture)
-      .setOrigin(.5, 1)
-      .setScale(scale)
-      .setDepth(8 + y / 100 + offset);
+      .setOrigin(.5, 1).setScale(scale);
+    const flat = texture === ENV_TEXTURES.rug ||
+      texture === ENV_TEXTURES.paper || texture === ENV_TEXTURES.debris;
+    const depth = flat ? WORLD_DEPTH.groundDecal
+      : texture === ENV_TEXTURES.sign ? WORLD_DEPTH.wallDecal
+      : tallPropDepth(y) + offset * .001;
+    image.setDepth(depth);
     this.props.push(image);
     return image;
   }
 
-  private glow(x: number, y: number, radius: number): void {
+  /** QA introspection; no gameplay logic depends on this representation. */
+  getRenderState():{
+    halfWidth:number; halfHeight:number; rearWidthRatio:number;
+    polygon:readonly {x:number;y:number}[];
+    windowOpeningWidth:number;
+    props:readonly {texture:string;depth:number;footY:number}[];
+  }{
+    return {
+      halfWidth:this.halfWidth,halfHeight:this.halfHeight,
+      rearWidthRatio:this.dimensions.rearWidthRatio,
+      polygon:this.vertices.map(p=>({x:p.x,y:p.y})),
+      windowOpeningWidth:this.dimensions.windowOpeningWidth,
+      props:this.props.filter(
+        (p): p is Phaser.GameObjects.Image => p instanceof Phaser.GameObjects.Image,
+      ).map(p=>({texture:p.texture.key,depth:p.depth,footY:p.y})),
+    };
+  }
+
+    private glow(x: number, y: number, radius: number): void {
     const g = this.illumination;
     for (let i = 4; i >= 1; i -= 1) {
       g.fillStyle(0xffb741, .021 + i * .018);
@@ -407,37 +429,44 @@ export class Arena {
 
   private placeScenery(): void {
     const { x, y } = this.center;
-    this.prop(ENV_TEXTURES.rug, x + 278, y + 218, 2.0, -1);
-    this.prop(ENV_TEXTURES.shelf, x + 320, y - 148, 1.28);
-    this.prop(ENV_TEXTURES.barrel, x - 355, y - 115, 1.33);
-    this.prop(ENV_TEXTURES.lantern, x - 355, y - 161, 1.65, 2);
-    this.glow(x - 355, y - 180, 140);
-    this.prop(ENV_TEXTURES.crate, x - 330, y + 229, 1.3);
-    this.prop(ENV_TEXTURES.crate, x - 384, y + 196, 1.0);
-    this.prop(ENV_TEXTURES.crate, x + 412, y + 165, 1.33);
-    this.prop(ENV_TEXTURES.lantern, x + 438, y + 119, 1.5, 3);
-    this.glow(x + 438, y + 124, 132);
+    // Preserve purposeful relative scenery composition as the room grows.
+    const sx = this.halfWidth / 730;
+    const sy = this.halfHeight / 330;
+    this.prop(ENV_TEXTURES.rug, x + 278 * sx, y + 218 * sy, 2.0);
+    this.prop(ENV_TEXTURES.shelf, x + 320 * sx, y - 148 * sy, 1.28);
+    this.prop(ENV_TEXTURES.barrel, x - 355 * sx, y - 115 * sy, 1.33);
+    this.prop(ENV_TEXTURES.lantern, x - 355 * sx, y - 161 * sy, 1.65, 2);
+    this.glow(x - 355 * sx, y - 180 * sy, 140);
+    this.prop(ENV_TEXTURES.crate, x - 330 * sx, y + 229 * sy, 1.3);
+    this.prop(ENV_TEXTURES.crate, x - 384 * sx, y + 196 * sy, 1.0);
+    this.prop(ENV_TEXTURES.crate, x + 412 * sx, y + 165 * sy, 1.33);
+    this.prop(ENV_TEXTURES.lantern, x + 438 * sx, y + 119 * sy, 1.5, 3);
+    this.glow(x + 438 * sx, y + 124 * sy, 132);
     this.glow(this.interactions.mysteryBox.x, this.interactions.mysteryBox.y, 150);
-    this.prop(ENV_TEXTURES.crate, x - 477, y + 212, 1.15);
-    this.prop(ENV_TEXTURES.crate, x + 510, y + 158, 1.15);
-    this.prop(ENV_TEXTURES.paper, x - 260, y + 143, 1.18, -2).setAngle(-12);
-    this.prop(ENV_TEXTURES.paper, x + 95, y + 212, .86, -2).setAngle(24);
+    this.prop(ENV_TEXTURES.crate, x - 477 * sx, y + 212 * sy, 1.15);
+    this.prop(ENV_TEXTURES.crate, x + 510 * sx, y + 158 * sy, 1.15);
+    this.prop(ENV_TEXTURES.paper, x - 260 * sx, y + 143 * sy, 1.18).setAngle(-12);
+    this.prop(ENV_TEXTURES.paper, x + 95 * sx, y + 212 * sy, .86).setAngle(24);
 
-    this.prop(ENV_TEXTURES.sign, x + 484, y + 61, 1.0);
+    // Distinct rooms areas stay populated; ground clutter remains below actors.
+    this.prop(ENV_TEXTURES.crate, x - 530 * sx, y - 30 * sy, .85);
+    this.prop(ENV_TEXTURES.barrel, x + 550 * sx, y - 68 * sy, 1.05);
+    this.prop(ENV_TEXTURES.paper, x - 65 * sx, y + 110 * sy, .78).setAngle(11);
+    this.prop(ENV_TEXTURES.sign, x + 484 * sx, y + 61 * sy, 1.0);
     const sign = this.scene.add.text(
-      x + 484, y + 8, "HOLD\nTHE\nLINE!", {
+      x + 484 * sx, y + 8 * sy, "HOLD\nTHE\nLINE!", {
         align: "center",
         fontFamily: "monospace", fontStyle: "bold",
         fontSize: "11px", color: "#5d322b",
       },
-    ).setOrigin(.5).setDepth(8 + (y + 61) / 100 + .2);
+    ).setOrigin(.5).setDepth(8 + (y + 61 * sy) / 100 + .2);
     this.props.push(sign);
 
     for (const [dx, dy, scale] of [
       [-450, -48, .7], [-279, 124, .92], [420, -50, .74],
       [-210, -172, .76], [328, 192, .58],
     ] as const) {
-      this.prop(ENV_TEXTURES.debris, x + dx, y + dy, scale, -2);
+      this.prop(ENV_TEXTURES.debris, x + dx * sx, y + dy * sy, scale);
     }
   }
 }

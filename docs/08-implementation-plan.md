@@ -168,3 +168,30 @@ The first Stage 2 build exposed a 42px body-center displacement via
 Chromium. Corrected by deriving source radius/offsets from
 `CHARACTER_W`, `CHARACTER_FEET_Y`, and `CHARACTER_SCALE`; browser
 acceptance checks the actual Arcade Body.center against player feet.
+
+## Stage 3 — Art contract and angled adventure-room rebuild
+
+**3A — contract:** complete. `ArtManifest.ts` defines the material and
+actor ramps, `worldLayers.ts` defines depth, and
+`docs/11-art-direction-and-depth-rules.md` documents projection, pixel
+rules and the invariant that rugs NEVER cover a standing character.
+
+**3B — implementation:** widened the room to 990×470 half-dimensions,
+changed the rear-to-front taper ratio 0.49→0.78, tied all four actual
+wall collision gaps to an illustrated fixed-width 116px opening, and
+preserved the single-room wave/economy gameplay. Background geometry,
+wall faces and near cutaway ledge are now distinct Phaser display layers.
+
+Inside actors use `actorDepth(feet.y)` and tall props use
+`tallPropDepth(footY)`. The rug, paper and floor debris always use
+`groundDecal` and lantern/chest ground glow always uses `groundLight`.
+NPCs outside the windows render below the wall face and switch to
+dynamic y-sorting once inside. Wall signage uses `wallDecal`.
+Character colors reference the new canonical manifest. A modest
+head-contour scale adjustment shifts the existing original characters
+toward classic three-quarter adventure proportions.
+
+QA: pure geometry/depth/color tests and Chromium screenshot test.
+This is an original Zelda-*inspired* projection and palette, not a copy
+of a copyrighted game. Manual visual approval of the redesigned cabin
+and physical mobile testing remain pending.

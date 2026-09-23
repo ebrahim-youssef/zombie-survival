@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { ENV_TEXTURES, ensureEnvironmentArt } from "../art/EnvironmentArt";
+import { WORLD_DEPTH, tallPropDepth } from "../art/worldLayers";
 import { ECONOMY_CONFIG } from "../config/economy";
 import type { RunState } from "../game/RunState";
 import type { InventoryController } from "../weapons/InventoryController";
@@ -39,10 +40,10 @@ export class MysteryBox {
     private readonly runState: RunState,
   ) {
     ensureEnvironmentArt(scene);
-    const depth = 8 + position.y / 100;
+    const depth = tallPropDepth(position.y + 8);
     this.halo = scene.add.ellipse(
       position.x, position.y + 8, 130, 48, 0xf4b53f, .18,
-    ).setDepth(depth - .3);
+    ).setDepth(WORLD_DEPTH.groundLight + .01);
     this.marker = scene.add.image(
       position.x, position.y + 8, ENV_TEXTURES.chest,
     ).setOrigin(.5, .83).setScale(1.3).setDepth(depth);

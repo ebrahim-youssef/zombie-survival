@@ -135,3 +135,26 @@ In a QA session press `4`: green/pink = movement circles at the feet,
 lime/cyan = larger body hurtboxes covering the visible head and torso.
 Press `3` to also reveal recent real raycasts. See the Stage 2 tests and
 `docs/08-implementation-plan.md` for numerical dimensions.
+
+## Stage 3 — Original angled-adventure cabin
+
+Stage 3 introduces the source-of-truth design contract in
+`docs/11-art-direction-and-depth-rules.md`: an original warm/cool palette,
+rounded readable three-quarter characters, a much larger low-taper room,
+and a strict world render-order model. This draws on the general
+angled-camera readability of classic Zelda-like adventure games without
+copying Nintendo's assets.
+
+The cabin's floor is now roughly twice the previous playable area.
+Window visuals, NPC entry points, hitscan openings and player bounds share
+the **same geometry**. Flat rugs, papers, ground decals and lighting always
+stay below actors. Tall furniture and the glowing Mystery Box sort against
+actors using their **feet**; outside zombies stay behind the wall until
+entering through a window. Front wall/ledge renders over characters only
+where it physically occupies the foreground.
+
+The player/zombie source frames and their Stage 2 damage/collision geometry
+remain unchanged; character head proportions and color ramps were subtly
+refined. The new real-game CI screenshot artifact is
+`stage3-adventure-cabin.png`. Desktop and real-device visual sign-off are
+still required for a fully polished adventure-art look.

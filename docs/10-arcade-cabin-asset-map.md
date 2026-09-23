@@ -66,3 +66,14 @@ size**, and feet origin is **56/64**. The player/zombie physics circle offsets
 remain unchanged because display width and feet display-origin remain 96px and
 84px respectively. Only character assets and portrait framing changed.
 Review both `cabin-art-preview.png` and `character-closeups.png` from Actions.
+
+## Stage 3 supersession: single palette and depth source of truth
+
+Use `docs/11-art-direction-and-depth-rules.md` and
+`src/art/worldLayers.ts` for all new assets.
+Stage 2 original character geometry is kept, including 64×64 source,
+1.5× display, 15px world-foot collision circles and torso hurtboxes.
+`src/world/arenaGeometry.ts` now defines the wide mild-taper projection
+and fixed 116px window openings shared with hitscan geometry.
+All former ad hoc y-based depth calculations in arena scenery, actors,
+Mystery Box and wall-buy signs have been replaced with explicit layers.

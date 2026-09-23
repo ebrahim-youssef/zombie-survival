@@ -27,6 +27,7 @@ if(import.meta.env.DEV && new URLSearchParams(location.search).has("smoke")){
       zoom:():number=>
         (game.scene.getScene("game") as GameScene).debugCameraZoom(),
       debugState:()=> (game.scene.getScene("game") as GameScene).debugShortcutsState(),
+      artLayerState:()=> (game.scene.getScene("game") as GameScene).debugStage3ArtState(),
       alignedShot:()=> (game.scene.getScene("game") as GameScene).debugFireAtAlignedTarget(),
       alignedMelee:()=> (game.scene.getScene("game") as GameScene).debugMeleeAtAlignedTarget(),
       ammo:():number=>

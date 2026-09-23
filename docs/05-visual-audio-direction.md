@@ -153,3 +153,16 @@ cheeks; helmets, hair, torn clothing, joints and weapons are layered and use
 subtle antialiasing. Small highlight clusters keep an arcade pixel-art feel.
 No commercial sprites are reused. All existing 8 facings/action keys persist.
 Do not alter background, furniture or HUD visual direction in this pass.
+
+## Stage 3 wide three-quarter adventure direction (current)
+
+The Age-of-Zombies chunky overhead treatment is superseded as a goal:
+prefer classic Zelda-like three-quarter readability (faces/torso/feet),
+a wide low-taper navigable cabin, natural wood and moss material ramps,
+subtle top-left highlights and cold night beyond the windows.
+The original artwork is not copied from Nintendo or Halfbrick.
+
+Structural guarantee: rug, flat paper, floor debris and light pools are
+always lower depth than every standing player/zombie. Display layers and
+world geometry are immutable game constraints, not visual guesses.
+Artwork iteration remains possible after browser screenshots are reviewed.

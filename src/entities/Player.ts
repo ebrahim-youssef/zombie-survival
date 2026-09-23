@@ -3,6 +3,7 @@ import {PLAYER_CONFIG} from "../config/player";
 import type {FacingDirection} from "../types/game";
 import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H,CHARACTER_W,CHARACTER_SCALE} from "../art/CharacterArt";
 import {facingFromVector} from "../art/directions";
+import { actorDepth } from "../art/worldLayers";
 import { ACTOR_HITBOXES, actorHurtbox, footBodyOffsets } from "../combat/hurtbox";
 
 const DIAGONAL_COMPONENT=1/Math.sqrt(2);
@@ -22,7 +23,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
     scene.physics.add.existing(this);
     this.setOrigin(.5,CHARACTER_FEET_Y/CHARACTER_H);
     this.setScale(CHARACTER_SCALE);
-    this.setDepth(8+y/100);
+    this.setDepth(actorDepth(y));
     this.setCollideWorldBounds(false);
     // Hitbox remains on the floor/feet, regardless of tall visual sprite.
     // Arcade offsets are SOURCE pixels, not scaled world distances.
@@ -101,7 +102,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite{
       this.setTexture(key);
       this.currentTexture=key;
     }
-    this.setDepth(8+this.y/100);
+    this.setDepth(actorDepth(this.y));
   }
   /** Visual gun-barrel offset; hitscan remains feet-centred for balance. */
   getVisibleMuzzlePosition(direction:Phaser.Math.Vector2):Phaser.Math.Vector2{

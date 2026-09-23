@@ -4,8 +4,8 @@ import type { Arena } from "./Arena";
 /**
  * The HUD and virtual controls currently share GameScene's main camera.
  * Keep camera zoom at 1 so UI artwork and input hit targets use identical
- * screen-space coordinates. Responsive viewport sizing and full-body 48x64
- * character frames provide mobile readability without letterboxing.
+ * screen-space coordinates. Full-viewport resizing and 64x64 authored
+ * frames at 1.5x keep mobile readability without letterboxing.
  *
  * A dedicated world/UI camera split is required before custom world zoom.
  */

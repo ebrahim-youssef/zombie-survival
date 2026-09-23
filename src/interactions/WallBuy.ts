@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { ENV_TEXTURES, ensureEnvironmentArt } from "../art/EnvironmentArt";
+import { WORLD_DEPTH } from "../art/worldLayers";
 import type { RunState } from "../game/RunState";
 import type { InventoryController } from "../weapons/InventoryController";
 import {
@@ -27,7 +28,7 @@ export class WallBuy {
     const weapon = getWeaponDefinition(weaponId);
 
     ensureEnvironmentArt(scene);
-    const depth = 8 + position.y / 100;
+    const depth = WORLD_DEPTH.wallDecal;
     this.marker = scene.add.image(
       position.x, position.y,
       weaponId === "mr6" ? ENV_TEXTURES.wallBuyMr6 : ENV_TEXTURES.wallBuyKuda,
@@ -45,7 +46,7 @@ export class WallBuy {
         },
       )
       .setOrigin(0.5)
-      .setDepth(8 + position.y / 100 + .2);
+      .setDepth(depth + .01);
   }
 
   getPrompt(): string {

@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import {ZOMBIE_CONFIG} from "../config/zombie";
 import {ensureCharacterArt,characterTexture,characterFrameCount,CHARACTER_FEET_Y,CHARACTER_H,CHARACTER_W,CHARACTER_SCALE} from "../art/CharacterArt";
 import {facingFromVector} from "../art/directions";
+import { actorDepth, WORLD_DEPTH } from "../art/worldLayers";
 import type {FacingDirection} from "../types/game";
 import type {Player} from "./Player";
 import { ACTOR_HITBOXES, actorHurtbox, footBodyOffsets } from "../combat/hurtbox";
@@ -34,7 +35,9 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite{
     scene.physics.add.existing(this);
     this.setOrigin(.5,CHARACTER_FEET_Y/CHARACTER_H);
     this.setScale(CHARACTER_SCALE);
-    this.setDepth(8+y/100);
+    // Outside zombies must pass behind the rear/side wall faces until
+    // they cross the window; inside zombies y-sort with the player.
+    this.setDepth(WORLD_DEPTH.outsideActor);
     const sourceCircle=footBodyOffsets(
       CHARACTER_W,CHARACTER_FEET_Y,CHARACTER_SCALE,
       ACTOR_HITBOXES.zombie.footRadius,
@@ -47,6 +50,7 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite{
     physicsBody.setBounce(0);
   }
   get isDead():boolean{return this.dead;}
+  get enteredArena():boolean{return this.enteredRoom;}
   updateBehavior(now:number,player:Player):void{
     if(this.dead||player.isDead){this.setVelocity(0,0);return;}
     if(!this.enteredRoom){
@@ -106,7 +110,9 @@ export class Zombie extends Phaser.Physics.Arcade.Sprite{
       this.setTexture(key);this.visualTexture=key;
     }
     this.lastPresentationAt=now;
-    this.setDepth(8+this.y/100);
+    this.setDepth(
+      this.enteredRoom ? actorDepth(this.y) : WORLD_DEPTH.outsideActor,
+    );
   }
   private die():void{
     this.dead=true;

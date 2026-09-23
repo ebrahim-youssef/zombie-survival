@@ -41,7 +41,7 @@ export function ensureEnvironmentArt(scene: Phaser.Scene): void {
     rect(g, 0x8a5533, 9, 29, 8, 6);
     rect(g, 0x402d22, 5, 10, 15, 23);
     rect(g, 0xd69b37, 7, 9, 11, 3);
-    rect(g, 0xf7b736, 7, 13, 11, 16);
+    rect(g, CABIN_PALETTE.gold, 7, 13, 11, 16);
     rect(g, 0xffdb61, 9, 15, 7, 12);
     rect(g, 0xfff3b4, 11, 16, 3, 9);
     rect(g, 0xa9672b, 5, 12, 3, 20);
@@ -93,7 +93,7 @@ export function ensureEnvironmentArt(scene: Phaser.Scene): void {
 
   render(g, ENV_TEXTURES.rug, 112, 75, () => {
     g.fillStyle(0x221d22, 0.5); g.fillEllipse(56, 43, 104, 50);
-    rect(g, 0x4b242d, 8, 5, 98, 59);
+    rect(g, CABIN_PALETTE.carpet, 8, 5, 98, 59);
     edge(g, 0x9c5541, 12, 9, 90, 51);
     edge(g, 0x673641, 18, 14, 78, 42);
     rect(g, 0x702f3a, 21, 18, 70, 34);
@@ -111,7 +111,7 @@ export function ensureEnvironmentArt(scene: Phaser.Scene): void {
   render(g, ENV_TEXTURES.chest, 80, 60, () => {
     g.fillStyle(0x151923, 0.45); g.fillEllipse(41, 54, 72, 12);
     rect(g, 0x2b241d, 6, 23, 68, 28);
-    rect(g, 0x885126, 8, 24, 64, 23);
+    rect(g, CABIN_PALETTE.plank, 8, 24, 64, 23);
     rect(g, 0xad7131, 12, 27, 55, 17);
     rect(g, 0x52341e, 18, 20, 5, 28);
     rect(g, 0xe0a540, 20, 23, 2, 20);
