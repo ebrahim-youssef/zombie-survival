@@ -193,7 +193,11 @@ export class GameScene extends Phaser.Scene {
     const target=this.zombies.spawn(this.arena.windows[0]!,10,0);
     target.setPosition(player.x+150,player.y);
     const body=target.body;
-    if(body instanceof Phaser.Physics.Arcade.Body)body.reset(target.x,target.y);
+    if(body instanceof Phaser.Physics.Arcade.Body){
+      body.reset(target.x,target.y);
+      // Phaser Body.reset leaves the raw top-left until next physics step.
+      body.updateFromGameObject();
+    }
     const targetPhysicsFootY=body instanceof Phaser.Physics.Arcade.Body
       ?body.center.y:NaN;
     const aimed=target.getAimPoint();
@@ -231,7 +235,10 @@ export class GameScene extends Phaser.Scene {
     const zombie=this.zombies.spawn(this.arena.windows[0]!,100,0);
     zombie.setPosition(this.player.x+55,this.player.y);
     const body=zombie.body;
-    if(body instanceof Phaser.Physics.Arcade.Body)body.reset(zombie.x,zombie.y);
+    if(body instanceof Phaser.Physics.Arcade.Body){
+      body.reset(zombie.x,zombie.y);
+      body.updateFromGameObject();
+    }
     const before=this.runState.points;
     this.combat.update({
       move:new Phaser.Math.Vector2(),aimWorld:zombie.getAimPoint(),
