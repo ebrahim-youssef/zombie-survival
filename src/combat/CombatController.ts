@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { AudioController } from "../audio/AudioController";
 import { PLAYER_CONFIG } from "../config/player";
 import type { Player } from "../entities/Player";
 import type { RunState } from "../game/RunState";
@@ -19,6 +20,7 @@ export class CombatController {
 
   private readonly effects: CombatEffects;
   private readonly melee: MeleeController;
+  private readonly audio: AudioController;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -29,6 +31,7 @@ export class CombatController {
   ) {
     this.effects = new CombatEffects(scene);
     this.melee = new MeleeController(this.effects);
+    this.audio = new AudioController(scene);
   }
 
   update(input: InputFrame, now: number): void {
@@ -58,6 +61,8 @@ export class CombatController {
 
     if (!fired) return;
 
+    this.audio.play("shot");
+
     this.fireWeapon(
       aimDirection,
       weapon.definition,
@@ -66,20 +71,23 @@ export class CombatController {
 
   destroy(): void {
     this.inventory.destroy();
+    this.audio.destroy();
   }
 
   private handleWeaponSwitch(input: InputFrame): void {
+    let switched = false;
+
     if (input.slotPressed === 1) {
-      this.inventory.switchToDisplaySlot(1);
-      return;
+      switched = this.inventory.switchToDisplaySlot(1);
+    } else if (input.slotPressed === 2) {
+      switched = this.inventory.switchToDisplaySlot(2);
+    } else {
+      switched = this.inventory.cycle(input.cycleWeapon);
     }
 
-    if (input.slotPressed === 2) {
-      this.inventory.switchToDisplaySlot(2);
-      return;
+    if (switched) {
+      this.audio.play("ui");
     }
-
-    this.inventory.cycle(input.cycleWeapon);
   }
 
   private tryMelee(
@@ -98,6 +106,8 @@ export class CombatController {
       this.zombies.getAliveZombies(),
     );
 
+    this.audio.play("melee");
+
     if (!zombie) return;
 
     const damage = zombie.takeDamage(
@@ -105,6 +115,18 @@ export class CombatController {
     );
 
     if (damage.applied) {
+      this.effects.showDamageNumber(
+        new Phaser.Math.Vector2(
+          zombie.x,
+          zombie.y,
+        ),
+        PLAYER_CONFIG.meleeDamage,
+      );
+
+      this.audio.play(
+        damage.killed ? "kill" : "hit",
+      );
+
       this.runState.awardZombieDamage(
         damage.killed,
         "melee",
@@ -123,7 +145,11 @@ export class CombatController {
       definition.pelletCount,
     );
 
-    for (let pellet = 0; pellet < pelletCount; pellet += 1) {
+    for (
+      let pellet = 0;
+      pellet < pelletCount;
+      pellet += 1
+    ) {
       this.firePellet(
         aimDirection,
         definition,
@@ -164,14 +190,25 @@ export class CombatController {
       result.end.y,
     );
 
+    const amount = getDamageAtDistance(
+      definition,
+      distance,
+    );
+
     const damage = result.zombie.takeDamage(
-      getDamageAtDistance(
-        definition,
-        distance,
-      ),
+      amount,
     );
 
     if (damage.applied) {
+      this.effects.showDamageNumber(
+        result.end,
+        amount,
+      );
+
+      this.audio.play(
+        damage.killed ? "kill" : "hit",
+      );
+
       this.runState.awardZombieDamage(
         damage.killed,
         "gun",

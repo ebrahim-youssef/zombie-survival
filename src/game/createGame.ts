@@ -1,9 +1,14 @@
 import Phaser from "phaser";
-import { GAME_BACKGROUND, GAME_HEIGHT, GAME_WIDTH } from "./constants";
+import {
+  GAME_BACKGROUND,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+} from "./constants";
 import { BootScene } from "../scenes/BootScene";
 import { MenuScene } from "../scenes/MenuScene";
 import { GameScene } from "../scenes/GameScene";
 import { UIScene } from "../scenes/UIScene";
+import { PauseScene } from "../scenes/PauseScene";
 
 export function createGame(): Phaser.Game {
   return new Phaser.Game({
@@ -27,6 +32,12 @@ export function createGame(): Phaser.Game {
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
     },
-    scene: [BootScene, MenuScene, GameScene, UIScene],
+    scene: [
+      BootScene,
+      MenuScene,
+      GameScene,
+      UIScene,
+      PauseScene,
+    ],
   });
 }

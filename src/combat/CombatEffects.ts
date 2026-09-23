@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import type { GameSettings } from "../persistence/LocalSettingsStore";
 
 export class CombatEffects {
   constructor(private readonly scene: Phaser.Scene) {}
@@ -18,6 +19,43 @@ export class CombatEffects {
 
     this.scene.time.delayedCall(durationMs, () => {
       graphics.destroy();
+    });
+  }
+
+  showDamageNumber(
+    position: Phaser.Math.Vector2,
+    amount: number,
+  ): void {
+    const settings = this.scene.registry.get(
+      "gameSettings",
+    ) as GameSettings | undefined;
+
+    if (!settings?.damageNumbers) return;
+
+    const label = this.scene.add
+      .text(
+        position.x,
+        position.y - 18,
+        String(Math.round(amount)),
+        {
+          fontFamily: "monospace",
+          fontSize: "14px",
+          color: "#f5e5b7",
+          stroke: "#111312",
+          strokeThickness: 3,
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(950);
+
+    this.scene.tweens.add({
+      targets: label,
+      y: label.y - 22,
+      alpha: 0,
+      duration: 480,
+      onComplete: () => {
+        label.destroy();
+      },
     });
   }
 

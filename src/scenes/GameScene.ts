@@ -1,9 +1,11 @@
 import Phaser from "phaser";
+import { AudioController } from "../audio/AudioController";
 import { CombatController } from "../combat/CombatController";
 import { Player } from "../entities/Player";
 import { RunState } from "../game/RunState";
 import { InteractionController } from "../interactions/InteractionController";
 import { DesktopInput } from "../input/DesktopInput";
+import { LocalSettingsStore } from "../persistence/LocalSettingsStore";
 import { Crosshair } from "../ui/Crosshair";
 import { HUD } from "../ui/HUD";
 import { Arena } from "../world/Arena";
@@ -23,6 +25,7 @@ export class GameScene extends Phaser.Scene {
   private combat: CombatController | undefined;
   private interactions: InteractionController | undefined;
   private runState: RunState | undefined;
+  private audio: AudioController | undefined;
   private gameOver = false;
 
   constructor() {
@@ -51,6 +54,7 @@ export class GameScene extends Phaser.Scene {
       spawn.y,
     );
     this.runState = new RunState();
+    this.audio = new AudioController(this);
 
     this.desktopInput = new DesktopInput(
       this,
@@ -127,7 +131,9 @@ export class GameScene extends Phaser.Scene {
     const input = this.desktopInput.read();
 
     if (input.pausePressed) {
-      this.scene.start("menu");
+      this.player.setVelocity(0, 0);
+      this.scene.pause();
+      this.scene.launch("pause");
       return;
     }
 
@@ -154,6 +160,7 @@ export class GameScene extends Phaser.Scene {
         90,
         0.0025,
       );
+      this.audio?.play("hurt");
     }
 
     if (this.player.isDead) {
@@ -228,10 +235,23 @@ export class GameScene extends Phaser.Scene {
 
     const wave = this.waves.snapshot(now);
 
+    const store = new LocalSettingsStore();
+    const persisted = store.recordRun(
+      this.runState.points,
+      wave.round,
+    );
+
+    this.registry.set(
+      "persistedGameData",
+      persisted,
+    );
+
     this.hud.showGameOver(
       wave.round,
       this.runState.kills,
       this.runState.points,
+      persisted.highScore,
+      persisted.highestRound,
     );
 
     const restart = (): void => {
@@ -260,6 +280,7 @@ export class GameScene extends Phaser.Scene {
     this.zombies?.destroy();
     this.cameraController?.destroy();
     this.arena?.destroy();
+    this.audio?.destroy();
 
     this.game.canvas.style.cursor = "default";
 
@@ -274,6 +295,7 @@ export class GameScene extends Phaser.Scene {
     this.runState = undefined;
     this.player = undefined;
     this.arena = undefined;
+    this.audio = undefined;
     this.gameOver = false;
   }
 }

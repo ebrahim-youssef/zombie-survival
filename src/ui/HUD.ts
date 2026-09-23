@@ -123,7 +123,7 @@ export class HUD {
       .text(
         camera.width / 2,
         22,
-        "PHASE 6 • ECONOMY + INTERACTIONS",
+        "PHASE 7 • UI + AUDIO + SAVE",
         {
           fontFamily: "monospace",
           fontSize: "14px",
@@ -261,6 +261,8 @@ export class HUD {
     round: number,
     kills: number,
     points: number,
+    highScore: number,
+    highestRound: number,
   ): void {
     const camera = this.scene.cameras.main;
 
@@ -268,10 +270,10 @@ export class HUD {
       .rectangle(
         camera.width / 2,
         camera.height / 2,
-        540,
-        260,
+        620,
+        310,
         0x080909,
-        0.9,
+        0.92,
       )
       .setScrollFactor(0)
       .setDepth(3000);
@@ -280,18 +282,24 @@ export class HUD {
       .text(
         camera.width / 2,
         camera.height / 2,
-        "GAME OVER\n\nROUND " +
+        "GAME OVER\n\n" +
+          "ROUND " +
           round +
           "   •   " +
           kills +
           " KILLS   •   " +
           points +
-          " PTS\n\nPress ENTER or click to restart",
+          " PTS\n\n" +
+          "BEST SCORE " +
+          highScore +
+          "   •   HIGHEST ROUND " +
+          highestRound +
+          "\n\nPress ENTER or click to restart",
         {
           align: "center",
           fontFamily: "monospace",
-          fontSize: "22px",
-          lineSpacing: 10,
+          fontSize: "21px",
+          lineSpacing: 9,
           color: "#ede8dc",
         },
       )

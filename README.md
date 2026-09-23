@@ -4,26 +4,26 @@ Client-only pseudo-isometric zombie survival game prototype.
 
 ## Current status
 
-**Phase 6 — economy + interactions**
+**Phase 7 — UI, audio and persistence**
 
 Implemented:
 
 - Vite 8 + TypeScript 7 strict mode.
 - Phaser 3.90 + Arcade Physics.
-- pseudo-isometric arena and four zombie windows.
-- player movement, independent aim and camera foundation.
-- full wave progression and BO3-inspired round scaling.
-- six weapon definitions and two-slot inventory.
-- weapon switching and shotgun pellet behavior.
-- MR6 wall buy: 500 / refill 250.
-- Kuda wall buy: 1250 / refill 625.
-- Mystery Box: 950.
-- Mystery pool excludes currently owned weapons.
-- Mystery cycling/reveal and 10-second pickup timeout.
-- contextual E prompts.
-- insufficient-points feedback.
-- wall buys and Mystery Box share the same inventory acquisition rules.
-- gun/melee zombie damage, scoring, health/regen and game over.
+- pseudo-isometric arena and zombie-window loop.
+- player movement, aim, combat and regeneration.
+- BO3-inspired wave progression.
+- six weapons and two-slot inventory.
+- wall buys and Mystery Box economy.
+- contextual interaction prompts.
+- real pause/resume overlay.
+- pause settings/restart/main-menu actions.
+- settings panel with master volume and damage-number toggle.
+- localStorage versioned persistence.
+- persisted high score and highest round.
+- menu and game-over record display.
+- generated Web Audio SFX hooks; no proprietary audio assets.
+- optional floating damage numbers.
 - GitHub CI running strict TypeScript + production Vite build.
 
 ## Runtime
@@ -53,6 +53,6 @@ Production output: `dist/`.
 
 ## Next implementation slice
 
-**Phase 7 — UI/audio/persistence:** proper pause/settings flow, HUD pass, SFX hooks, local high score/highest round and settings persistence.
+**Phase 8 — mobile input:** virtual movement, touch aiming, fire/melee/reload/interact/swap/pause controls and safe-area-aware responsive positioning.
 
 See `docs/08-implementation-plan.md`.

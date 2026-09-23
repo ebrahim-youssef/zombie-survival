@@ -28,47 +28,48 @@ Status: **complete**
 
 Status: **complete**
 
-- MR6 bottom-wall interaction.
-- MR6 full acquisition price: 500.
-- MR6 owned-ammo refill: 250.
-- Kuda top-wall interaction.
-- Kuda full acquisition price: 1250.
-- Kuda owned-ammo refill: 625.
-- wall buys use the shared inventory acquisition API.
-- owned ammo cannot be repurchased while already full.
-- Mystery Box cost: 950.
-- pool: Kuda, KN-44, KRM-262, BRM, Drakon.
-- currently owned weapons excluded.
-- equal random selection among remaining candidates.
-- ~3.5-second cycling/reveal.
-- ~10-second pickup timeout.
-- E interaction for purchase/take.
-- nearest interaction wins when ranges overlap.
-- insufficient-points and result feedback.
-- contextual HUD interaction prompt.
-
 ## Phase 7 — UI/audio/persistence
 
-Status: **next**
+Status: **complete**
 
-- complete HUD pass.
-- real pause menu.
-- settings.
-- SFX.
-- local high score/highest round/settings persistence.
+- main-menu best score/highest-round display.
+- real pause overlay; Esc no longer abandons the run.
+- pause resume/settings/restart/main-menu actions.
+- shared settings panel.
+- persisted master-volume setting.
+- persisted damage-numbers toggle.
+- mouse-sensitivity value retained in the persisted schema for future use.
+- localStorage schema version 1.
+- high score persisted at game over.
+- highest round persisted at game over.
+- game-over panel displays run and persisted records.
+- lightweight generated Web Audio SFX hooks.
+- shot/melee/hit/kill/hurt/weapon-switch cues.
+- optional floating damage numbers controlled by settings.
+- storage failure safely falls back to defaults.
+
+No proprietary BO3 audio is included.
 
 ## Phase 8 — Mobile input
 
+Status: **next**
+
 - virtual movement.
-- aim.
-- fire/melee/reload/interact/swap.
+- right-side aim.
+- fire.
+- melee.
+- reload.
+- interact.
+- weapon swap.
+- pause.
 - safe-area responsive UI.
 
 ## Phase 9 — Polish/hardening
 
 - original pixel-art assets.
 - animations.
-- feedback.
+- expanded SFX.
+- debug tooling.
 - performance.
 - full acceptance pass.
 
