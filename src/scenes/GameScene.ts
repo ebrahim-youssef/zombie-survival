@@ -1,60 +1,134 @@
 import Phaser from "phaser";
-import { GAME_HEIGHT, GAME_WIDTH } from "../game/constants";
+import { Player } from "../entities/Player";
+import { DesktopInput } from "../input/DesktopInput";
+import { Crosshair } from "../ui/Crosshair";
+import { Arena } from "../world/Arena";
+import { CameraController } from "../world/CameraController";
 
 export class GameScene extends Phaser.Scene {
+  private arena: Arena | undefined;
+  private player: Player | undefined;
+  private desktopInput: DesktopInput | undefined;
+  private crosshair: Crosshair | undefined;
+  private cameraController: CameraController | undefined;
+
   constructor() {
     super("game");
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor("#171817");
+    this.cameras.main.setBackgroundColor("#141614");
 
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0x292b26, 1);
-    graphics.lineStyle(3, 0x676452, 1);
+    this.arena = new Arena(this);
 
-    const floor = [
-      new Phaser.Geom.Point(GAME_WIDTH / 2, 115),
-      new Phaser.Geom.Point(GAME_WIDTH - 170, GAME_HEIGHT / 2),
-      new Phaser.Geom.Point(GAME_WIDTH / 2, GAME_HEIGHT - 115),
-      new Phaser.Geom.Point(170, GAME_HEIGHT / 2),
-    ];
+    const worldBounds = this.arena.getCameraBounds(220);
+    this.physics.world.setBounds(
+      worldBounds.x,
+      worldBounds.y,
+      worldBounds.width,
+      worldBounds.height,
+    );
 
-    graphics.fillPoints(floor, true);
-    graphics.strokePoints(floor, true, true);
+    const spawn = this.arena.spawnPoint;
+    this.player = new Player(this, spawn.x, spawn.y);
+    this.desktopInput = new DesktopInput(this, this.cameras.main);
+    this.crosshair = new Crosshair(this);
 
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 22, "PHASE 0 SCAFFOLD", {
-      fontFamily: "monospace",
-      fontSize: "30px",
-      color: "#ede8dc",
-    }).setOrigin(0.5);
+    this.cameraController = new CameraController(
+      this.cameras.main,
+      this.player,
+      this.arena,
+    );
 
-    this.add.text(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT / 2 + 26,
-      "Arena / player implementation is the next vertical slice.",
-      { fontFamily: "monospace", fontSize: "16px", color: "#b8ac86" },
-    ).setOrigin(0.5);
-
-    this.add.text(34, 30, "ROUND 1", {
-      fontFamily: "monospace",
-      fontSize: "20px",
-      color: "#ede8dc",
-    });
-
-    this.add.text(34, GAME_HEIGHT - 54, "HP 150   •   500 PTS", {
-      fontFamily: "monospace",
-      fontSize: "18px",
-      color: "#ede8dc",
-    });
-
-    this.add.text(GAME_WIDTH - 34, GAME_HEIGHT - 54, "MR6   8 / 32", {
-      fontFamily: "monospace",
-      fontSize: "18px",
-      color: "#ede8dc",
-    }).setOrigin(1, 0);
-
-    this.input.keyboard?.on("keydown-ESC", () => this.scene.start("menu"));
     this.input.mouse?.disableContextMenu();
+    this.game.canvas.style.cursor = "none";
+
+    this.createHudPlaceholder();
+
+    this.events.once(
+      Phaser.Scenes.Events.SHUTDOWN,
+      this.shutdown,
+      this,
+    );
+  }
+
+  update(): void {
+    if (
+      !this.arena ||
+      !this.player ||
+      !this.desktopInput ||
+      !this.crosshair
+    ) {
+      return;
+    }
+
+    const input = this.desktopInput.read();
+
+    if (input.pausePressed) {
+      this.scene.start("menu");
+      return;
+    }
+
+    this.player.applyMovement(input.move);
+    this.player.faceWorldPoint(input.aimWorld);
+    this.arena.constrainPlayer(this.player);
+    this.crosshair.setWorldPosition(input.aimWorld);
+  }
+
+  private createHudPlaceholder(): void {
+    const camera = this.cameras.main;
+
+    this.add
+      .text(24, 22, "ROUND 1", {
+        fontFamily: "monospace",
+        fontSize: "20px",
+        color: "#ede8dc",
+      })
+      .setScrollFactor(0)
+      .setDepth(2000);
+
+    this.add
+      .text(24, camera.height - 48, "HP 150   •   500 PTS", {
+        fontFamily: "monospace",
+        fontSize: "18px",
+        color: "#ede8dc",
+      })
+      .setScrollFactor(0)
+      .setDepth(2000);
+
+    this.add
+      .text(camera.width - 24, camera.height - 48, "MR6   8 / 32", {
+        fontFamily: "monospace",
+        fontSize: "18px",
+        color: "#ede8dc",
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(2000);
+
+    this.add
+      .text(camera.width / 2, 22, "PHASE 1 • MOVE + AIM", {
+        fontFamily: "monospace",
+        fontSize: "14px",
+        color: "#b8ac86",
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(2000);
+  }
+
+  private shutdown(): void {
+    this.desktopInput?.destroy();
+    this.crosshair?.destroy();
+    this.cameraController?.destroy();
+    this.arena?.destroy();
+
+    this.game.canvas.style.cursor = "default";
+
+    this.desktopInput = undefined;
+    this.crosshair = undefined;
+    this.cameraController = undefined;
+    this.player = undefined;
+    this.arena = undefined;
   }
 }
