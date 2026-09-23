@@ -25,32 +25,35 @@ Status: **complete**
 Status: **complete**
 
 ## Phase 8 — Mobile input
-Status: **implementation complete; device acceptance pending**
-
-- Mobile touch detection chooses a single device-neutral input source.
-- Left virtual movement stick with eight snapped directions.
-- Right aim stick with persistent aim direction.
-- Dedicated fire (held), melee, reload, interact, weapon swap and pause buttons.
-- Multiple independent touch pointers tracked by pointer ID.
-- Mobile controls are screen-space game objects; the world camera can move independently.
-- Clear held inputs on pause, shutdown and touch release.
-- Safe-area padding, 100dvh layout and a landscape-orientation hint.
-- Desktop keyboard and mouse controls remain unchanged.
-
-Device acceptance still required on a physical iPhone/Android device:
-multitouch, screen orientation, safe areas, pause/resume and button hit targets.
+Status: **implementation complete; physical-device acceptance pending**
 
 ## Phase 9 — Polish/hardening
-Status: **next**
+Status: **in progress; initial hardening slice implemented**
 
-- original pixel-art assets and animations;
-- expanded SFX;
-- gameplay debug tooling;
-- performance and full acceptance pass.
+Implemented in this slice:
+- scene-local gameplay clock; pauses no longer advance survival/wave/reload timers;
+- browser throttling delta capped to avoid huge time jumps;
+- shared game audio context rather than duplicate per-combat context;
+- shotgun hits aggregated per target per shot for correct scoring;
+- weapon spread interpreted as full cone width;
+- generated procedural player/zombie sprite details (placeholder improvement);
+- clear HP bar and red damage flash;
+- dev-only F3 diagnostic visualization: wall segments, spawn points,
+  interaction/melee ranges, zombie hit/attack radii and recent hitscan rays;
+- F6 +950 points, F7 refill, F8 kill all, F9 jump to next round and F10 god mode;
+- automated tests for waves, inventory, firing/reload, economy, persistence,
+  gameplay clock and multi-pellet scoring; GitHub CI gates on the test suite.
 
-## Quality gate per phase
-1. Typecheck.
-2. Production build.
-3. No browser console errors.
-4. Manual phase acceptance pass.
-5. Debug tooling remains usable once introduced.
+Still required for full Phase 9 acceptance:
+- original production-quality sprite sheets and 8-way character animations;
+- audio replacement/polish and performance profiling on modest devices;
+- hands-on browser testing across desktop and physical mobile hardware;
+- full MVP acceptance pass in docs/07 and bug fixes discovered from it.
+The build/test pipeline is not a substitute for live gameplay acceptance.
+
+## Quality gate
+1. npm test.
+2. npm run typecheck.
+3. npm run build.
+4. Manual desktop/mobile acceptance.
+5. No recurring console errors or leaked effects.

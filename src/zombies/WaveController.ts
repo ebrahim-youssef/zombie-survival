@@ -29,7 +29,6 @@ export class WaveController {
   private spawnedZombies = 0;
   private nextSpawnAt = 0;
   private intermissionEndsAt = 0;
-
   private lastWindowId: WindowId | null = null;
   private consecutiveWindowSpawns = 0;
 
@@ -43,12 +42,10 @@ export class WaveController {
       if (now >= this.intermissionEndsAt) {
         this.startRound(this.round + 1, now);
       }
-
       return;
     }
 
     this.spawnDueZombie(now);
-
     if (
       this.spawnedZombies >= this.totalZombies &&
       this.zombies.getAliveCount() === 0
@@ -73,22 +70,23 @@ export class WaveController {
     };
   }
 
+  /** Dev-only: clear active zombies without scoring and begin the next round. */
+  debugNextRound(now: number): void {
+    this.zombies.clearAll();
+    this.startRound(this.round + 1, now);
+  }
+
   private spawnDueZombie(now: number): void {
     if (this.spawnedZombies >= this.totalZombies) return;
-
-    const activeCap = getMaxAliveZombies(this.round);
-    if (this.zombies.getAliveCount() >= activeCap) return;
-
+    if (this.zombies.getAliveCount() >= getMaxAliveZombies(this.round)) return;
     if (now < this.nextSpawnAt) return;
 
     const window = this.chooseSpawnWindow();
-
     this.zombies.spawn(
       window,
       getZombieHealth(this.round),
       getZombieMoveSpeed(this.round),
     );
-
     this.spawnedZombies += 1;
     this.nextSpawnAt = now + getSpawnIntervalMs(this.round);
   }
@@ -106,36 +104,23 @@ export class WaveController {
 
   private chooseSpawnWindow(): ArenaWindow {
     const windows = this.arena.windows;
-
     if (windows.length === 0) {
       throw new Error("Arena must expose at least one zombie window.");
     }
-
     let candidates = windows;
-
     if (
       this.lastWindowId &&
-      this.consecutiveWindowSpawns >=
-        WAVE_CONFIG.consecutiveWindowLimit
+      this.consecutiveWindowSpawns >= WAVE_CONFIG.consecutiveWindowLimit
     ) {
       const filtered = windows.filter(
         (window) => window.id !== this.lastWindowId,
       );
-
-      if (filtered.length > 0) {
-        candidates = filtered;
-      }
+      if (filtered.length > 0) candidates = filtered;
     }
 
-    const index = Phaser.Math.Between(
-      0,
-      candidates.length - 1,
-    );
+    const index = Phaser.Math.Between(0, candidates.length - 1);
     const selected = candidates[index];
-
-    if (!selected) {
-      throw new Error("Failed to select a zombie spawn window.");
-    }
+    if (!selected) throw new Error("Failed to select a zombie spawn window.");
 
     if (selected.id === this.lastWindowId) {
       this.consecutiveWindowSpawns += 1;
@@ -143,7 +128,6 @@ export class WaveController {
       this.lastWindowId = selected.id;
       this.consecutiveWindowSpawns = 1;
     }
-
     return selected;
   }
 }

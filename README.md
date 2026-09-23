@@ -4,39 +4,45 @@ Client-only pseudo-isometric zombie survival game prototype.
 
 ## Current status
 
-**Phase 8 — mobile input implementation**
+**Phase 9 — hardening pass in progress**
 
-- Vite 8 + TypeScript 7 strict mode, Phaser 3.90 + Arcade Physics.
-- Single-room zombie survival, wave progression, health and combat.
-- Six weapon definitions, two-slot inventory, wall buys and Mystery Box.
-- Pause/settings UI and browser-local score/settings persistence.
-- Generated Web Audio SFX; no proprietary audio.
-- Unified `InputFrame` adapter for desktop and touch gameplay.
-- Touch: left movement stick, right aim stick, fire, melee, reload, interact, swap, pause.
-- Multi-pointer controls and reset on pause/shutdown.
-- Safe-area-aware canvas container and portrait rotation hint.
-- Strict TypeScript and production Vite build in GitHub Actions.
+- Vite 8, strict TypeScript 7, Phaser 3.90 and Arcade Physics.
+- Zombie waves, six weapons, two-slot inventory, wall buys and Mystery Box.
+- Keyboard/mouse and mobile touch input through one `InputFrame`.
+- Pausing freezes gameplay timers using a scene-local clock.
+- Shotgun pellet scoring is aggregated per zombie/shot.
+- Health bar and enhanced damage feedback.
+- Improved procedural player/zombie placeholder sprites.
+- Development-only debug overlay and testing shortcuts.
+- Automated tests for weapon/inventory/economy/waves/clock/persistence/scoring.
 
-## Run locally
+## Setup
 
-Use Node 22.16.0 (see `.node-version`).
+Node 22.16.0 (`.node-version`):
 
 ```sh
 npm install
-npm run dev
+npm test
 npm run typecheck
 npm run build
+npm run dev
 ```
 
-## Cloudflare
+## Dev diagnostics
 
-- Build command: `npm run build`
-- Output directory: `dist`
+While playing via `npm run dev`: F3 toggles collision/range/ray overlay,
+F6 grants 950 points, F7 replenishes the equipped weapon, F8 clears zombies,
+F9 skips to the next round, F10 toggles invulnerability. Not available in the
+production build.
 
-## Validation status
+## Cloudflare Pages
 
-CI verifies types and bundle. Mobile device ergonomics and real-browser gameplay still require manual testing; a successful build alone does not establish full gameplay acceptance.
+Build command: `npm run build`  
+Output directory: `dist`
 
-## Next
+## Verification scope
 
-**Phase 9 — polish and hardening**: art, animations, debug tools, gameplay acceptance and performance. See `docs/08-implementation-plan.md`.
+GitHub CI executes unit/regression tests, strict TS and a production Vite
+build. Live gameplay on actual Android/iOS devices and production-grade
+sprite/animation/audio assets are still outstanding; see
+`docs/08-implementation-plan.md`.

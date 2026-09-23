@@ -15,35 +15,21 @@ export class InputController implements InputSource {
     player: Player,
   ) {
     this.touchMode = InputController.shouldUseTouch();
-
     this.source = this.touchMode
-      ? new MobileInput(
-          scene,
-          camera,
-          player,
-        )
-      : new DesktopInput(
-          scene,
-          camera,
-        );
+      ? new MobileInput(scene, camera, player)
+      : new DesktopInput(scene, camera);
   }
 
-  read(): InputFrame {
-    return this.source.read();
-  }
-
-  reset(): void {
-    this.source.reset();
-  }
-
-  destroy(): void {
-    this.source.destroy();
-  }
+  read(): InputFrame { return this.source.read(); }
+  reset(): void { this.source.reset(); }
+  destroy(): void { this.source.destroy(); }
 
   private static shouldUseTouch(): boolean {
+    // A laptop with a touchscreen should retain mouse+keyboard controls
+    // if its PRIMARY pointer is fine. Mobile primary pointers are coarse.
     return (
-      navigator.maxTouchPoints > 0 ||
-      "ontouchstart" in window
+      window.matchMedia("(pointer: coarse)").matches &&
+      (navigator.maxTouchPoints > 0 || "ontouchstart" in window)
     );
   }
 }

@@ -1,7 +1,9 @@
 import Phaser from "phaser";
 import { AudioController } from "../audio/AudioController";
 import { CombatController } from "../combat/CombatController";
+import { DebugController } from "../debug/DebugController";
 import { Player } from "../entities/Player";
+import { GameplayClock } from "../game/GameplayClock";
 import { RunState } from "../game/RunState";
 import { InteractionController } from "../interactions/InteractionController";
 import { InputController } from "../input/InputController";
@@ -26,32 +28,27 @@ export class GameScene extends Phaser.Scene {
   private interactions: InteractionController | undefined;
   private runState: RunState | undefined;
   private audio: AudioController | undefined;
+  private debug: DebugController | undefined;
+  private damageFlash: Phaser.GameObjects.Rectangle | undefined;
+  private clock = new GameplayClock();
   private gameOver = false;
 
-  constructor() {
-    super("game");
-  }
+  constructor() { super("game"); }
 
   create(): void {
+    this.clock = new GameplayClock();
     this.cameras.main.setBackgroundColor("#141614");
     this.arena = new Arena(this);
-    const worldBounds = this.arena.getCameraBounds(220);
+    const bounds = this.arena.getCameraBounds(220);
     this.physics.world.setBounds(
-      worldBounds.x,
-      worldBounds.y,
-      worldBounds.width,
-      worldBounds.height,
+      bounds.x, bounds.y, bounds.width, bounds.height,
     );
-
     const spawn = this.arena.spawnPoint;
     this.player = new Player(this, spawn.x, spawn.y);
     this.runState = new RunState();
     this.audio = new AudioController(this);
-
     this.inputController = new InputController(
-      this,
-      this.cameras.main,
-      this.player,
+      this, this.cameras.main, this.player,
     );
     this.crosshair = new Crosshair(this);
     this.hud = new HUD(this);
@@ -59,53 +56,43 @@ export class GameScene extends Phaser.Scene {
     this.zombies = new ZombieController(this, this.arena, this.player);
     this.waves = new WaveController(this.arena, this.zombies);
     this.combat = new CombatController(
-      this,
-      this.player,
-      this.arena,
-      this.zombies,
-      this.runState,
+      this, this.player, this.arena, this.zombies, this.runState, this.audio,
     );
     this.interactions = new InteractionController(
-      this.player,
-      this.arena,
-      this.combat.inventory,
-      this.runState,
+      this.player, this.arena, this.combat.inventory, this.runState,
     );
     this.cameraController = new CameraController(
-      this.cameras.main,
-      this.player,
-      this.arena,
+      this.cameras.main, this.player, this.arena,
     );
+    this.damageFlash = this.add.rectangle(
+      this.cameras.main.width / 2, this.cameras.main.height / 2,
+      this.cameras.main.width, this.cameras.main.height, 0xb53232,
+    ).setScrollFactor(0).setDepth(1000).setAlpha(0);
+
+    if (import.meta.env.DEV) {
+      this.debug = new DebugController(
+        this, this.arena, this.player,
+        this.zombies, this.waves, this.combat, this.runState,
+      );
+    }
 
     this.input.mouse?.disableContextMenu();
     this.game.canvas.style.cursor = this.inputController.touchMode
       ? "default"
       : "none";
-
-    // Touch controls need a higher depth than the HUD, while the HUD
-    // remains readable without competing for touch pointer events.
     this.refreshHud(0);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
   }
 
-  override update(time: number, delta: number): void {
+  override update(_globalTime: number, delta: number): void {
     if (
-      !this.arena ||
-      !this.player ||
-      !this.inputController ||
-      !this.crosshair ||
-      !this.hud ||
-      !this.zombies ||
-      !this.waves ||
-      !this.combat ||
-      !this.interactions ||
-      !this.runState
+      !this.arena || !this.player || !this.inputController ||
+      !this.crosshair || !this.hud || !this.zombies || !this.waves ||
+      !this.combat || !this.interactions || !this.runState
     ) return;
-
     if (this.gameOver) return;
 
     const input = this.inputController.read();
-
     if (input.pausePressed) {
       this.inputController.reset();
       this.player.setVelocity(0, 0);
@@ -114,54 +101,57 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    const now = this.clock.advance(delta);
+    const activeDelta = Number.isFinite(delta)
+      ? Phaser.Math.Clamp(delta, 0, 100)
+      : 0;
+
     this.player.applyMovement(input.move);
     this.player.faceWorldPoint(input.aimWorld);
     this.arena.constrainPlayer(this.player);
     this.crosshair.setWorldPosition(input.aimWorld);
+    this.player.updateSurvival(now, activeDelta);
+    this.waves.update(now);
 
-    this.player.updateSurvival(time, delta);
-    this.waves.update(time);
-    const healthBeforeZombieUpdate = this.player.health;
-    this.zombies.update(time);
-
-    if (this.player.health < healthBeforeZombieUpdate) {
+    const hpBefore = this.player.health;
+    this.zombies.update(now);
+    if (this.player.health < hpBefore) {
       this.cameras.main.shake(90, 0.0025);
       this.audio?.play("hurt");
+      if (this.damageFlash) {
+        this.tweens.killTweensOf(this.damageFlash);
+        this.damageFlash.setAlpha(0.23);
+        this.tweens.add({
+          targets: this.damageFlash,
+          alpha: 0,
+          duration: 300,
+        });
+      }
     }
 
     if (this.player.isDead) {
-      this.endGame(time);
+      this.endGame(now);
       return;
     }
 
-    this.combat.update(input, time);
-    this.interactions.update(input, time);
-
-    for (const award of this.runState.consumePointAwards()) {
-      this.hud.showPointGain(award);
+    this.combat.update(input, now);
+    this.interactions.update(input, now);
+    for (const amount of this.runState.consumePointAwards()) {
+      this.hud.showPointGain(amount);
     }
-
-    this.refreshHud(time);
+    this.debug?.update(now);
+    this.refreshHud(now);
   }
 
   private refreshHud(now: number): void {
     if (
-      !this.player ||
-      !this.combat ||
-      !this.interactions ||
-      !this.hud ||
-      !this.runState ||
-      !this.waves
+      !this.player || !this.combat || !this.interactions ||
+      !this.hud || !this.runState || !this.waves
     ) return;
-
     this.hud.updateStatus(
-      this.player.health,
-      this.player.maxHealth,
-      this.runState,
+      this.player.health, this.player.maxHealth, this.runState,
     );
-    this.hud.updateWeapon(
-      this.combat.inventory.activeWeapon.snapshot(),
-    );
+    this.hud.updateWeapon(this.combat.inventory.activeWeapon.snapshot());
     this.hud.updateInventory(this.combat.inventory.snapshot());
     this.hud.updateWave(this.waves.snapshot(now));
     this.hud.updateInteraction(this.interactions.snapshot());
@@ -169,14 +159,9 @@ export class GameScene extends Phaser.Scene {
 
   private endGame(now: number): void {
     if (
-      this.gameOver ||
-      !this.player ||
-      !this.zombies ||
-      !this.waves ||
-      !this.hud ||
-      !this.runState
+      this.gameOver || !this.player || !this.zombies ||
+      !this.waves || !this.hud || !this.runState
     ) return;
-
     this.gameOver = true;
     this.player.setVelocity(0, 0);
     this.player.setTint(0x6b3434);
@@ -184,19 +169,14 @@ export class GameScene extends Phaser.Scene {
     this.inputController?.reset();
 
     const wave = this.waves.snapshot(now);
-    const persisted = new LocalSettingsStore().recordRun(
-      this.runState.points,
-      wave.round,
+    const saved = new LocalSettingsStore().recordRun(
+      this.runState.points, wave.round,
     );
-    this.registry.set("persistedGameData", persisted);
+    this.registry.set("persistedGameData", saved);
     this.hud.showGameOver(
-      wave.round,
-      this.runState.kills,
-      this.runState.points,
-      persisted.highScore,
-      persisted.highestRound,
+      wave.round, this.runState.kills, this.runState.points,
+      saved.highScore, saved.highestRound,
     );
-
     const restart = (): void => {
       if (this.scene.isActive()) this.scene.restart();
     };
@@ -205,6 +185,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private shutdown(): void {
+    this.debug?.destroy();
     this.inputController?.destroy();
     this.crosshair?.destroy();
     this.hud?.destroy();
@@ -214,8 +195,9 @@ export class GameScene extends Phaser.Scene {
     this.cameraController?.destroy();
     this.arena?.destroy();
     this.audio?.destroy();
+    this.damageFlash?.destroy();
     this.game.canvas.style.cursor = "default";
-
+    this.debug = undefined;
     this.inputController = undefined;
     this.crosshair = undefined;
     this.hud = undefined;
@@ -228,6 +210,7 @@ export class GameScene extends Phaser.Scene {
     this.player = undefined;
     this.arena = undefined;
     this.audio = undefined;
+    this.damageFlash = undefined;
     this.gameOver = false;
   }
 }
