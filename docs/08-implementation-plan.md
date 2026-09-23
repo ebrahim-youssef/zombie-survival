@@ -117,3 +117,22 @@ Still pending:
 These are original editable runtime-generated textures, not PNG files
 extracted from the reference. The approved image remains an art direction
 target, not a claim of pixel-perfect duplication.
+
+## Staged QA changes following device and art feedback
+
+1. **Stage 1 — Debug accessibility (this commit):** no-modifier physical keys
+   3–0; 3 toggles ranges, 4 real Arcade bodies; all other cheats are
+   individually mapped and 0 displays help. Cloudflare/preview QA can be
+   enabled with `?debug=1` without a special build variable. Real Chromium
+   tests cover local and production Vite preview and confirm ordinary public
+   visits do not automatically enable debugging.
+2. **Stage 2 — Hitbox and aiming alignment (pending):** inspect the actual
+   player/zombie physics circles versus the displayed 64px raster at 1.5×,
+   and reconcile combat hitscan radius, projectile origin, touch targeting,
+   melee and visible facing. Stage 1 overlays explicitly reveal the current
+   difference; Stage 1 does not modify combat balancing.
+3. **Stage 3 — Original Zelda-like angled cabin art direction (pending):**
+   freeze an original color palette, sprite-proportion sheet, layers/
+   occlusion rules (ground decals and rug strictly below all actors),
+   perspective/world-projection conventions, and room expansion before
+   editing the existing cabin rendering. No Nintendo game assets are reused.

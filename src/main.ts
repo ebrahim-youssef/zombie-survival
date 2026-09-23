@@ -3,6 +3,17 @@ import {createGame} from "./game/createGame";
 import type {GameScene} from "./scenes/GameScene";
 
 const game=createGame();
+if(new URLSearchParams(location.search).get("debug")==="1"){
+  // Explicit browser QA hook. Exists in deployed builds only when testing
+  // is requested with ?debug=1; avoid exposing it on normal page loads.
+  Object.defineProperty(window,"__zombieDebug",{
+    value:{
+      scene:(name:string):boolean=>game.scene.isActive(name),
+      state:()=> (game.scene.getScene("game") as GameScene).debugShortcutsState(),
+    },
+    configurable:false,
+  });
+}
 if(import.meta.env.DEV && new URLSearchParams(location.search).has("smoke")){
   // Only exposed by local Vite dev builds explicitly opened with ?smoke.
   Object.defineProperty(window,"__zombieSmoke",{

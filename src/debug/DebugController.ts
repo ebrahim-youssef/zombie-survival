@@ -27,7 +27,7 @@ export interface DebugSnapshot {
 }
 
 /**
- * Debug keyboard shortcuts use Shift + the physical number row (1–7).
+ * Debug uses plain physical number keys 3–0 in explicitly enabled QA sessions.
  * Real Arcade Physics bodies are drawn independently from the older range
  * overlay, which intentionally draws gameplay-specific approximate ranges.
  */
@@ -37,6 +37,8 @@ export class DebugController {
   private readonly info: Phaser.GameObjects.Text;
   private overlayVisible = false;
   private hitboxesVisible = false;
+  private helpVisible = false;
+  private readonly badge: Phaser.GameObjects.Text;
   private currentTime = 0;
 
   constructor(
@@ -50,7 +52,11 @@ export class DebugController {
   ) {
     this.graphics = scene.add.graphics().setDepth(3500);
     this.bodyGraphics = scene.add.graphics().setDepth(3501);
-    this.info = scene.add.text(18, 102, "", {
+    this.badge = scene.add.text(18, 80, "DEBUG MODE  •  [0] HELP", {
+      fontFamily: "monospace", fontSize: "12px", color: "#e6bd68",
+      backgroundColor: "#171817c9", padding: { x: 5, y: 3 },
+    }).setScrollFactor(0).setDepth(3600);
+    this.info = scene.add.text(18, 108, "", {
       fontFamily: "monospace",
       fontSize: "12px",
       color: "#f6ce72",
@@ -59,7 +65,9 @@ export class DebugController {
       padding: { x: 8, y: 6 },
     }).setScrollFactor(0).setDepth(3600).setVisible(false);
 
-    scene.input.keyboard?.on("keydown", this.onKeyDown, this);
+    // Capture at window level so the shortcuts work even when the Phaser
+    // canvas has not been explicitly focused after loading on Cloudflare.
+    window.addEventListener("keydown", this.onKeyDown, true);
   }
 
   snapshot(): DebugSnapshot {
@@ -89,11 +97,11 @@ export class DebugController {
     if (this.hitboxesVisible) this.drawHitboxes();
     else this.bodyGraphics.clear();
 
-    this.info.setVisible(this.overlayVisible || this.hitboxesVisible);
-    if (this.overlayVisible || this.hitboxesVisible) {
+    this.info.setVisible(this.overlayVisible || this.hitboxesVisible || this.helpVisible);
+    if (this.overlayVisible || this.hitboxesVisible || this.helpVisible) {
       this.info.setText(
-        "SHIFT+1 RANGES | SHIFT+2 +950 | SHIFT+3 AMMO | SHIFT+4 KILL ALL\n" +
-        "SHIFT+5 NEXT | SHIFT+6 GOD | SHIFT+7 REAL HITBOXES\n" +
+        "3 RANGES | 4 HITBOXES | 5 +950 | 6 AMMO\n" +
+        "7 KILL ALL | 8 NEXT | 9 GOD | 0 HELP\n" +
         "RANGES " + (this.overlayVisible ? "ON" : "OFF") +
         " | HITBOXES " + (this.hitboxesVisible ? "ON" : "OFF") +
         " | GOD " + (this.player.invulnerable ? "ON" : "OFF") +
@@ -105,18 +113,23 @@ export class DebugController {
 
   destroy(): void {
     this.combat.setDebugRayCapture(false);
-    this.scene.input.keyboard?.off("keydown", this.onKeyDown, this);
+    window.removeEventListener("keydown", this.onKeyDown, true);
+    this.badge.destroy();
     this.graphics.destroy();
     this.bodyGraphics.destroy();
     this.info.destroy();
   }
 
-  private onKeyDown(event: KeyboardEvent): void {
+  private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (!this.scene.sys.isActive()) return;
+    const target = event.target;
+    if (target instanceof HTMLElement &&
+      (target.isContentEditable || target.matches("input,textarea,select"))) return;
     const action = resolveDebugShortcut(event);
     if (!action) return;
     event.preventDefault();
     this.perform(action);
-  }
+  };
 
   private perform(action: DebugAction): void {
     switch (action) {
@@ -145,6 +158,9 @@ export class DebugController {
       case "hitboxes":
         this.hitboxesVisible = !this.hitboxesVisible;
         if (!this.hitboxesVisible) this.bodyGraphics.clear();
+        break;
+      case "help":
+        this.helpVisible = !this.helpVisible;
         break;
     }
     // Allow a tester to see the effect immediately without requiring
@@ -192,6 +208,10 @@ export class DebugController {
     this.strokeBody(this.player, 0x39ecb1);
     for (const zombie of this.zombies.getAliveZombies()) {
       this.strokeBody(zombie, 0xff659f);
+      // Cyan = separate gameplay raycast circle. The difference from
+      // pink Arcade body is deliberately visible for Stage 2 alignment.
+      g.lineStyle(1, 0x7fd5ff, 0.85);
+      g.strokeCircle(zombie.x, zombie.y, zombie.hitRadius);
     }
   }
 

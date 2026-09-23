@@ -39,6 +39,9 @@ jobs:
       - name: Browser smoke tests
         run: npm run test:e2e
 
+      - name: Test debug controls in a production preview build
+        run: npx playwright test --config playwright.prod.config.mjs
+
       - name: Upload playable art snapshot
         if: success()
         uses: actions/upload-artifact@v4

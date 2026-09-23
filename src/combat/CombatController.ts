@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { isDebugSession } from "../debug/isDebugSession";
 import type { AudioController } from "../audio/AudioController";
 import { PLAYER_CONFIG } from "../config/player";
 import type { Player } from "../entities/Player";
@@ -43,9 +44,7 @@ export class CombatController {
   }
 
   setDebugRayCapture(enabled: boolean): void {
-    const stagingDebug = import.meta.env.VITE_ENABLE_DEBUG_TOOLS === "true"
-      && new URLSearchParams(window.location.search).has("debug");
-    this.captureDebugRays = (import.meta.env.DEV || stagingDebug) && enabled;
+    this.captureDebugRays = isDebugSession() && enabled;
     if (!enabled) this.debugRays.length = 0;
   }
 

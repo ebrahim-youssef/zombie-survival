@@ -28,30 +28,34 @@ npm run build
 npm run dev
 ```
 
-## Dev diagnostics
+## Dev diagnostics — QA Stage 1
 
-While playing via `npm run dev`, use **Shift + the number row**:
+For **local development**, start the game normally with `npm run dev`.
+For **deployed Cloudflare Pages builds**, append `?debug=1` to the
+deployed game URL, then start a run. This opt-in works without configuring
+Cloudflare build environment variables. Without `?debug=1`, regular
+production page visits have **no debug shortcuts**.
 
-| Shortcut | Diagnostic |
+The shortcuts use the physical **number row 3–0 with no modifiers**:
+
+| Key | Action |
 | --- | --- |
-| Shift+1 | Toggle range/spawn/wall/hitscan overlay |
-| Shift+2 | Add 950 points |
-| Shift+3 | Refill equipped weapon |
-| Shift+4 | Kill all currently alive zombies |
-| Shift+5 | Advance to the next round |
-| Shift+6 | Toggle invulnerability |
-| Shift+7 | Toggle **actual Arcade Physics hitboxes** independently |
+| 3 | Toggle wall/range/spawn and hitscan-ray overlay |
+| 4 | Toggle actual player/zombie **Arcade Physics hitboxes** |
+| 5 | Add 950 points |
+| 6 | Refill equipped weapon |
+| 7 | Kill all currently alive zombies |
+| 8 | Skip to next round |
+| 9 | Toggle god mode |
+| 0 | Toggle the shortcut help panel |
 
-Hitbox colors: green = player's real physics body, pink = live zombies'
-real physics bodies, yellow = hitscan wall segments/window gaps.
-The former F-key bindings have been removed. Holding Shift suppresses
-the normal 1/2 weapon-slot shortcuts.
-
-Debug tools are automatically available in local Vite development.
-To test on a **private Cloudflare preview/staging deployment**, set
-`VITE_ENABLE_DEBUG_TOOLS=true` as a build environment variable and open
-the deployed URL with `?debug=1`. Leave this variable unset on the
-public/production deployment, where debug shortcuts are disabled.
+1 and 2 continue to switch weapons normally; F keys and Shift combinations
+have no debugging behavior. The debug badge confirms that QA mode is enabled.
+Colors for **4**: green = actual player collider, pink = actual zombie
+colliders, cyan = separate zombie raycast circles, yellow = wall ray segments.
+The differences between actual collision shapes and sprite art are
+intentional diagnostics for **QA Stage 2**, which will repair alignment.
+Debug sessions do not save high-score or highest-round records.
 
 ## Cloudflare Pages
 

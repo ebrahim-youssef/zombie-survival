@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { AudioController } from "../audio/AudioController";
 import { CombatController } from "../combat/CombatController";
 import { DebugController } from "../debug/DebugController";
+import { isDebugSession } from "../debug/isDebugSession";
 import { Player } from "../entities/Player";
 import { GameplayClock } from "../game/GameplayClock";
 import { RunState } from "../game/RunState";
@@ -70,11 +71,9 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.width, this.cameras.main.height, 0xb53232,
     ).setScrollFactor(0).setDepth(1000).setAlpha(0);
 
-    // In production these cheats remain disabled unless explicitly
-    // enabled on a staging deployment AND requested with ?debug=1.
-    const stagingDebug = import.meta.env.VITE_ENABLE_DEBUG_TOOLS === "true"
-      && new URLSearchParams(window.location.search).has("debug");
-    if (import.meta.env.DEV || stagingDebug) {
+    // In any deployed build, append ?debug=1 for a QA session.
+    // Normal public page visits never instantiate developer controls.
+    if (isDebugSession()) {
       this.debug = new DebugController(
         this, this.arena, this.player,
         this.zombies, this.waves, this.combat, this.runState,
@@ -208,9 +207,11 @@ export class GameScene extends Phaser.Scene {
     this.inputController?.reset();
 
     const wave = this.waves.snapshot(now);
-    const saved = new LocalSettingsStore().recordRun(
-      this.runState.points, wave.round,
-    );
+    // QA cheats must not overwrite local records from ordinary play.
+    const store = new LocalSettingsStore();
+    const saved = isDebugSession()
+      ? store.load()
+      : store.recordRun(this.runState.points, wave.round);
     this.registry.set("persistedGameData", saved);
     // Dedicated overlay receives input while gameplay and touch buttons
     // are paused, fixing the blocked click/Enter restart regression.
