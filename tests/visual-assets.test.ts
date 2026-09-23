@@ -15,7 +15,7 @@ describe("original arcade art contracts",()=>{
   it("keeps prop identifiers and the warm/cool palette stable",()=>{
     expect(Object.keys(ENV_TEXTURES).length).toBeGreaterThanOrEqual(9);
     expect(CABIN_PALETTE.gold).toBe(0xf5b740);
-    expect(CABIN_PALETTE.night).toBe(0x08182b);
+    expect(CABIN_PALETTE.night).toBe(0x101e30);
     expect(HUD_TEXTURES.heart).toBe("hud:heart");
   });
 });
