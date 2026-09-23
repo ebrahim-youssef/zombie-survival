@@ -63,6 +63,7 @@ export class CombatController {
     const weapon = this.inventory.activeWeapon;
     if (input.reloadPressed && weapon.startReload(now)) {
       this.audio.play("ui");
+      this.player.beginAction("reload",now);
     }
 
     const aimDirection = new Phaser.Math.Vector2(
@@ -75,6 +76,7 @@ export class CombatController {
     if (!weapon.tryFire(now, input.firePressed, input.fireHeld)) return;
 
     this.audio.play("shot");
+    this.player.beginAction("shoot",now);
     this.fireWeapon(aimDirection, weapon.definition, now);
   }
 
@@ -108,6 +110,7 @@ export class CombatController {
     );
     // The cone may legitimately miss. A cooldown-rejected press must be silent.
     if (this.melee.getLastAttackAt() === previousAttack) return;
+    this.player.beginAction("melee",now);
     this.audio.play("melee");
     if (!zombie) return;
 

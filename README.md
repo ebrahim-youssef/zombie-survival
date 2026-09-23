@@ -46,3 +46,14 @@ GitHub CI executes unit/regression tests, strict TS and a production Vite
 build. Live gameplay on actual Android/iOS devices and production-grade
 sprite/animation/audio assets are still outstanding; see
 `docs/08-implementation-plan.md`.
+
+## Device QA fixes / angled sprite preview
+
+- Full-viewport RESIZE and responsive camera/HUD/menu/touch layouts.
+- Game-over scene owns working Restart / Main Menu buttons and Enter / Space.
+- Mobile stick auto-fire + visible zombie aim assist by default; manual and
+  auto-aim + fire button modes available in Settings.
+- Original procedural full-body angled 48×64 character frames and action
+  animations for eight facings replace the old rotating top-down blocks.
+- No copied Zelda or Call of Duty artwork is used.
+- Physical mobile device/visual acceptance remains necessary.

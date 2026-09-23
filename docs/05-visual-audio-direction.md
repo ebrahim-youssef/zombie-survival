@@ -98,3 +98,15 @@ Core SFX:
 - UI confirm/back.
 
 Use original/generated/permissively licensed audio only.
+
+## Implemented angled full-body procedural sprite pass
+
+- Characters use distinct front, three-quarter, side and back sprites.
+- Full-body 48×64 silhouettes with oversized helmets/heads, jacket/torso,
+  independent moving legs and boots, animated arms and equipment.
+- Per-facing player idle/walk/fire/melee/reload/hurt/death visual states.
+- Per-facing zombie idle/walk/attack/hurt/death visual states.
+- Circle colliders remain centered at the feet independent of visual height.
+- No whole-body sprite rotation: the art changes with the facing instead.
+- The procedural frames are original gameplay art. Final artist-authored
+  production sprite sheets are still a separate art acceptance task.

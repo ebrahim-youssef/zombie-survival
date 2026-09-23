@@ -139,6 +139,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.combat.update(input, now);
+    this.player.updateVisual(
+      now,
+      input.move.x!==0||input.move.y!==0,
+      this.combat.inventory.activeWeapon.isReloading,
+    );
     this.interactions.update(input, now);
     for (const amount of this.runState.consumePointAwards()) {
       this.hud.showPointGain(amount);

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import {facingVector} from "../art/directions";
 import { PLAYER_CONFIG } from "../config/player";
 import { ZOMBIE_CONFIG } from "../config/zombie";
 import type { Player } from "../entities/Player";
@@ -68,7 +69,8 @@ export class DebugController {
     this.graphics.strokeCircle(
       this.player.x, this.player.y, PLAYER_CONFIG.meleeRange,
     );
-    const angle = this.player.rotation;
+    const [vx,vy]=facingVector(this.player.facing);
+    const angle=Math.atan2(vy,vx);
     const halfArc = Phaser.Math.DegToRad(PLAYER_CONFIG.meleeArcDegrees / 2);
     for (const a of [angle - halfArc, angle + halfArc]) {
       this.graphics.lineBetween(
