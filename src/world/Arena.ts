@@ -24,13 +24,13 @@ interface ArenaOptions {
   windowGapRatio: number;
 }
 const DEFAULT_OPTIONS: ArenaOptions = {
-  centerX: 900, centerY: 550, halfWidth: 760, halfHeight: 390,
+  centerX: 900, centerY: 550, halfWidth: 730, halfHeight: 330,
   windowGapRatio: 0.18,
 };
 
 /**
- * Decorative cutaway cabin, built on the existing four-window diamond
- * collision layout. This class deliberately does not move gameplay geometry.
+ * Decorative four-window cabin with a trapezoid cutaway projection.
+ * Window/shot segments and player clamping share the same four boundaries.
  * The warm wood panels / blue exterior / pixel props are original art.
  */
 export class Arena {
@@ -58,12 +58,24 @@ export class Arena {
     this.halfWidth = config.halfWidth;
     this.halfHeight = config.halfHeight;
     this.vertices = [
-      new Phaser.Math.Vector2(this.center.x, this.center.y - this.halfHeight),
-      new Phaser.Math.Vector2(this.center.x + this.halfWidth, this.center.y),
-      new Phaser.Math.Vector2(this.center.x, this.center.y + this.halfHeight),
-      new Phaser.Math.Vector2(this.center.x - this.halfWidth, this.center.y),
+      new Phaser.Math.Vector2(
+        this.center.x - this.halfWidth * .49,
+        this.center.y - this.halfHeight * .76,
+      ),
+      new Phaser.Math.Vector2(
+        this.center.x + this.halfWidth * .49,
+        this.center.y - this.halfHeight * .76,
+      ),
+      new Phaser.Math.Vector2(
+        this.center.x + this.halfWidth,
+        this.center.y + this.halfHeight * .96,
+      ),
+      new Phaser.Math.Vector2(
+        this.center.x - this.halfWidth,
+        this.center.y + this.halfHeight * .96,
+      ),
     ];
-    this.windows = this.createWindows();
+      this.windows = this.createWindows();
     this.wallSegments = this.createWallSegments(config.windowGapRatio);
     this.interactions = this.createInteractionLayout();
 
@@ -91,15 +103,22 @@ export class Arena {
     player: Phaser.Physics.Arcade.Sprite,
     margin = 24,
   ): void {
-    const safeX = this.halfWidth - margin;
-    const safeY = this.halfHeight - margin;
-    const dx = player.x - this.center.x;
-    const dy = player.y - this.center.y;
-    const radial = Math.abs(dx) / safeX + Math.abs(dy) / safeY;
-    if (radial <= 1) return;
-    const scale = 1 / radial;
-    player.setPosition(this.center.x + dx * scale, this.center.y + dy * scale);
+    const top = this.vertices[0]!;
+    const bottom = this.vertices[2]!;
+    const y = Phaser.Math.Clamp(player.y, top.y + margin, bottom.y - margin);
+    const half = Math.max(12, this.floorHalfWidthAtY(y) - margin);
+    const x = Phaser.Math.Clamp(
+      player.x, this.center.x - half, this.center.x + half,
+    );
+    player.setPosition(x, y);
   }
+  private floorHalfWidthAtY(y: number): number {
+    const topY = this.vertices[0]!.y;
+    const bottomY = this.vertices[2]!.y;
+    const t = Phaser.Math.Clamp((y - topY) / (bottomY - topY), 0, 1);
+    return Phaser.Math.Linear(this.halfWidth * .49, this.halfWidth, t);
+  }
+  
   destroy(): void {
     for (const prop of this.props) prop.destroy();
     this.props.length = 0;
@@ -109,15 +128,18 @@ export class Arena {
   }
 
   private createWindows(): readonly ArenaWindow[] {
-    const [top, right, bottom, left] = this.vertices;
-    if (!top || !right || !bottom || !left) throw Error("Missing cabin vertices.");
+    const [topLeft, topRight, bottomRight, bottomLeft] = this.vertices;
+    if (!topLeft || !topRight || !bottomRight || !bottomLeft) {
+      throw Error("Missing cabin corners.");
+    }
     return [
-      this.createWindow("north-east", top, right),
-      this.createWindow("south-east", right, bottom),
-      this.createWindow("south-west", bottom, left),
-      this.createWindow("north-west", left, top),
+      this.createWindow("north-east", topLeft, topRight),
+      this.createWindow("south-east", topRight, bottomRight),
+      this.createWindow("south-west", bottomRight, bottomLeft),
+      this.createWindow("north-west", bottomLeft, topLeft),
     ];
   }
+  
   private createWindow(
     id: WindowId, start: Phaser.Math.Vector2, end: Phaser.Math.Vector2,
   ): ArenaWindow {
@@ -129,22 +151,25 @@ export class Arena {
     };
   }
   private createWallSegments(gapRatio: number): readonly Segment[] {
-    const [top, right, bottom, left] = this.vertices;
-    if (!top || !right || !bottom || !left) throw Error("Missing cabin vertices.");
+    const [topLeft, topRight, bottomRight, bottomLeft] = this.vertices;
+    if (!topLeft || !topRight || !bottomRight || !bottomLeft) {
+      throw Error("Missing cabin corners.");
+    }
     return [
-      ...this.splitWall(top, right, gapRatio),
-      ...this.splitWall(right, bottom, gapRatio),
-      ...this.splitWall(bottom, left, gapRatio),
-      ...this.splitWall(left, top, gapRatio),
+      ...this.splitWall(topLeft, topRight, gapRatio),
+      ...this.splitWall(topRight, bottomRight, gapRatio),
+      ...this.splitWall(bottomRight, bottomLeft, gapRatio),
+      ...this.splitWall(bottomLeft, topLeft, gapRatio),
     ];
   }
+  
   private createInteractionLayout(): ArenaInteractionLayout {
     return {
       kudaWallBuy: new Phaser.Math.Vector2(
         this.center.x, this.center.y - this.halfHeight * .68,
       ),
       mr6WallBuy: new Phaser.Math.Vector2(
-        this.center.x, this.center.y + this.halfHeight * .68,
+        this.center.x, this.center.y + this.halfHeight * .83,
       ),
       mysteryBox: new Phaser.Math.Vector2(this.center.x + 190, this.center.y + 10),
     };
@@ -197,98 +222,116 @@ export class Arena {
 
   private drawFloor(): void {
     const g = this.graphics;
+    const [tl, tr, br, bl] = this.vertices;
+    if (!tl || !tr || !br || !bl) return;
+
     g.fillStyle(CABIN_PALETTE.plankDark, 1);
     g.fillPoints([...this.vertices], true);
-    const [top, right, bottom, left] = this.vertices;
-    if (!top || !right || !bottom || !left) return;
-    // Warm floor base, with dark-cutaway bevel on its perimeter.
-    g.fillStyle(0x6e422d, 1);
+    // Uncluttered warm cabin floor, narrowing toward the rear wall.
+    g.fillStyle(0x76442c, 1);
     g.fillPoints([
-      new Phaser.Math.Vector2(top.x, top.y + 9),
-      new Phaser.Math.Vector2(right.x - 13, right.y),
-      new Phaser.Math.Vector2(bottom.x, bottom.y - 10),
-      new Phaser.Math.Vector2(left.x + 13, left.y),
+      new Phaser.Math.Vector2(tl.x + 7, tl.y + 8),
+      new Phaser.Math.Vector2(tr.x - 7, tr.y + 8),
+      new Phaser.Math.Vector2(br.x - 11, br.y - 9),
+      new Phaser.Math.Vector2(bl.x + 11, bl.y - 9),
     ], true);
 
-    for (let row = 0, y = top.y + 18; y < bottom.y - 13; row += 1, y += 27) {
-      const edge = Math.max(Math.abs(y - this.center.y), Math.abs(y + 25 - this.center.y));
-      const span = this.halfWidth * (1 - edge / this.halfHeight) - 12;
-      if (span < 16) continue;
-      const l = this.center.x - span;
-      const r = this.center.x + span;
-      g.fillStyle(row % 3 === 0 ? 0x905334 : row % 3 === 1 ? 0x79462f : 0x8d5132, .72);
-      g.fillRect(l, y + 2, span * 2, 19);
-      g.lineStyle(2, 0x442920, .84);
-      g.lineBetween(l, y + 23, r, y + 23);
-      g.lineStyle(1, 0xb17743, .55);
-      g.lineBetween(l + 4, y + 3, r - 4, y + 3);
-      const boardLength = 102;
-      for (let x = l + (row % 2) * (boardLength / 2) + boardLength;
-        x < r - 8; x += boardLength) {
-        g.lineStyle(2, 0x4b2d25, .8);
-        g.lineBetween(x, y + 2, x, y + 22);
-        g.fillStyle(0x35271f, .7);
-        g.fillRect(x - 5, y + 8, 2, 2);
-        g.fillRect(x - 5, y + 17, 2, 2);
+    for (let row = 0, y = tl.y + 12; y < br.y - 20; row += 1, y += 27) {
+      const topSpan = this.floorHalfWidthAtY(y) - 13;
+      const bottomSpan = this.floorHalfWidthAtY(y + 23) - 13;
+      if (topSpan < 20) continue;
+      const shade = row % 3 === 0 ? 0x905536
+        : row % 3 === 1 ? 0x845032 : 0x995c36;
+      g.fillStyle(shade, .82);
+      g.fillPoints([
+        new Phaser.Math.Vector2(this.center.x - topSpan, y + 1),
+        new Phaser.Math.Vector2(this.center.x + topSpan, y + 1),
+        new Phaser.Math.Vector2(this.center.x + bottomSpan, y + 22),
+        new Phaser.Math.Vector2(this.center.x - bottomSpan, y + 22),
+      ], true);
+      g.lineStyle(2, 0x462a22, .85);
+      g.lineBetween(
+        this.center.x - bottomSpan, y + 23,
+        this.center.x + bottomSpan, y + 23,
+      );
+      g.lineStyle(1, 0xbc804e, .46);
+      g.lineBetween(
+        this.center.x - topSpan + 5, y + 4,
+        this.center.x + topSpan - 5, y + 4,
+      );
+
+      const left = this.center.x - topSpan + 12;
+      const right = this.center.x + topSpan - 12;
+      for (
+        let seam = left + ((row % 2) * 51 + 100);
+        seam < right; seam += 102
+      ) {
+        g.lineStyle(2, 0x4a2f27, .84);
+        g.lineBetween(seam, y + 2, seam, y + 21);
+        g.fillStyle(0x3b2924, .75);
+        g.fillRect(seam - 5, y + 8, 2, 2);
+        g.fillRect(seam - 5, y + 17, 2, 2);
       }
     }
 
-    // Existing map shape stays authoritative for physics/ray collision.
-    g.lineStyle(20, 0x251f21, 1);
+    g.lineStyle(22, 0x242127, 1);
     g.strokePoints([...this.vertices], true, true);
-    g.lineStyle(6, 0xb27a4a, 1);
+    g.lineStyle(6, 0xae7648, 1);
     g.strokePoints([...this.vertices], true, true);
-
-    // Deterministic worn floor stains and discarded wood near corners.
     for (const [dx, dy] of [
-      [-350, -112], [-460, 42], [375, 125], [-272, 194],
-      [230, -180], [125, 236], [-120, -230],
+      [-320, -60], [-445, 90], [340, 124],
+      [-244, 192], [215, -154], [100, 237],
     ] as const) {
-      g.fillStyle(0x2d231f, .45);
-      g.fillEllipse(this.center.x + dx, this.center.y + dy, 31, 11);
-      g.lineStyle(3, 0x422d23, .8);
+      g.fillStyle(0x2f221f, .38);
+      g.fillEllipse(this.center.x + dx, this.center.y + dy, 24, 8);
+      g.lineStyle(3, 0x4e3227, .8);
       g.lineBetween(
-        this.center.x + dx - 16, this.center.y + dy - 5,
-        this.center.x + dx + 10, this.center.y + dy + 7,
+        this.center.x + dx - 15, this.center.y + dy - 4,
+        this.center.x + dx + 11, this.center.y + dy + 6,
       );
     }
   }
 
+  
   private drawWalls(): void {
-    const [top, right, bottom, left] = this.vertices;
-    if (!top || !right || !bottom || !left) return;
+    const [tl, tr, br, bl] = this.vertices;
+    if (!tl || !tr || !br || !bl) return;
     const edges: readonly (readonly [Phaser.Math.Vector2, Phaser.Math.Vector2])[] = [
-      [top, right], [right, bottom], [bottom, left], [left, top],
+      [tl, tr], [tr, br], [br, bl], [bl, tl],
     ];
     edges.forEach(([a, b], index) => {
-      const back = index === 0 || index === 3;
-      const rise = back ? 78 : 22;
-      const wallColor = index === 0 ? 0x5b382e : index === 3 ? 0x70412e : 0x3e302c;
+      // Three tall readable walls, with a low cutaway foreground ledge.
+      const back = index !== 2;
+      const rise = index === 0 ? 88 : back ? 92 : 22;
+      const wallColor = index === 0 ? 0x63412f
+        : index === 1 ? 0x55372c : index === 3 ? 0x73432d : 0x3e302c;
       this.graphics.fillStyle(wallColor, 1);
       this.graphics.fillPoints([
-        new Phaser.Math.Vector2(a.x, a.y),
-        new Phaser.Math.Vector2(b.x, b.y),
+        a.clone(), b.clone(),
         new Phaser.Math.Vector2(b.x, b.y - rise),
         new Phaser.Math.Vector2(a.x, a.y - rise),
       ], true);
-      this.graphics.lineStyle(back ? 11 : 8, 0x231f23, 1);
+      this.graphics.lineStyle(back ? 12 : 8, 0x221d21, 1);
       this.graphics.lineBetween(a.x, a.y - rise, b.x, b.y - rise);
-      this.graphics.lineStyle(3, 0xa76b42, back ? .95 : .72);
+      this.graphics.lineStyle(3, 0xb78350, .9);
       this.graphics.lineBetween(a.x, a.y - rise + 4, b.x, b.y - rise + 4);
-
       const length = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
-      for (let distance = 34; distance < length - 25; distance += 51) {
-        const at = Phaser.Math.LinearXY(a, b, distance / length);
-        this.graphics.lineStyle(2, 0x3c2826, .67);
-        this.graphics.lineBetween(at.x, at.y - rise + 9, at.x, at.y - 4);
-        this.graphics.lineStyle(1, 0x9b6840, .7);
-        this.graphics.lineBetween(at.x + 3, at.y - rise + 10, at.x + 3, at.y - 7);
+      for (let offset = 35; offset < length - 25; offset += 54) {
+        const at = Phaser.Math.LinearXY(a, b, offset / length);
+        this.graphics.lineStyle(2, 0x362521, .74);
+        this.graphics.lineBetween(
+          at.x, at.y - rise + 10, at.x, at.y - 4,
+        );
+        this.graphics.lineStyle(1, 0xa16a40, .6);
+        this.graphics.lineBetween(
+          at.x + 4, at.y - rise + 10, at.x + 4, at.y - 6,
+        );
       }
-      // Rendered slats match the original four collision-window locations.
       this.drawWindow(this.windows[index]!, a, b, back);
     });
   }
 
+  
   private drawWindow(
     window: ArenaWindow,
     start: Phaser.Math.Vector2,
