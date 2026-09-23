@@ -5,14 +5,17 @@ import type { RunState } from "../game/RunState";
 import type { InputFrame } from "../types/game";
 import type { Arena } from "../world/Arena";
 import type { ZombieController } from "../zombies/ZombieController";
-import { WeaponController } from "../weapons/WeaponController";
-import { MR6 } from "../weapons/weaponDefinitions";
+import { InventoryController } from "../weapons/InventoryController";
+import {
+  getDamageAtDistance,
+  type WeaponDefinition,
+} from "../weapons/weaponDefinitions";
 import { CombatEffects } from "./CombatEffects";
 import { castHitscan } from "./Hitscan";
 import { MeleeController } from "./MeleeController";
 
 export class CombatController {
-  readonly weapon = new WeaponController(MR6);
+  readonly inventory = new InventoryController();
 
   private readonly effects: CombatEffects;
   private readonly melee: MeleeController;
@@ -29,10 +32,13 @@ export class CombatController {
   }
 
   update(input: InputFrame, now: number): void {
-    this.weapon.update(now);
+    this.handleWeaponSwitch(input);
+    this.inventory.update(now);
+
+    const weapon = this.inventory.activeWeapon;
 
     if (input.reloadPressed) {
-      this.weapon.startReload(now);
+      weapon.startReload(now);
     }
 
     const aimDirection = new Phaser.Math.Vector2(
@@ -44,7 +50,7 @@ export class CombatController {
       this.tryMelee(now, aimDirection);
     }
 
-    const fired = this.weapon.tryFire(
+    const fired = weapon.tryFire(
       now,
       input.firePressed,
       input.fireHeld,
@@ -52,11 +58,28 @@ export class CombatController {
 
     if (!fired) return;
 
-    this.fireHitscan(aimDirection);
+    this.fireWeapon(
+      aimDirection,
+      weapon.definition,
+    );
   }
 
   destroy(): void {
-    this.weapon.cancelReload();
+    this.inventory.destroy();
+  }
+
+  private handleWeaponSwitch(input: InputFrame): void {
+    if (input.slotPressed === 1) {
+      this.inventory.switchToDisplaySlot(1);
+      return;
+    }
+
+    if (input.slotPressed === 2) {
+      this.inventory.switchToDisplaySlot(2);
+      return;
+    }
+
+    this.inventory.cycle(input.cycleWeapon);
   }
 
   private tryMelee(
@@ -89,10 +112,29 @@ export class CombatController {
     }
   }
 
-  private fireHitscan(aimDirection: Phaser.Math.Vector2): void {
+  private fireWeapon(
+    aimDirection: Phaser.Math.Vector2,
+    definition: WeaponDefinition,
+  ): void {
     if (aimDirection.lengthSq() === 0) return;
 
-    const definition = this.weapon.definition;
+    const pelletCount = Math.max(
+      1,
+      definition.pelletCount,
+    );
+
+    for (let pellet = 0; pellet < pelletCount; pellet += 1) {
+      this.firePellet(
+        aimDirection,
+        definition,
+      );
+    }
+  }
+
+  private firePellet(
+    aimDirection: Phaser.Math.Vector2,
+    definition: WeaponDefinition,
+  ): void {
     const direction = this.applySpread(
       aimDirection,
       definition.spreadDegrees,
@@ -115,8 +157,18 @@ export class CombatController {
 
     if (!result.zombie) return;
 
+    const distance = Phaser.Math.Distance.Between(
+      muzzle.x,
+      muzzle.y,
+      result.end.x,
+      result.end.y,
+    );
+
     const damage = result.zombie.takeDamage(
-      definition.damage,
+      getDamageAtDistance(
+        definition,
+        distance,
+      ),
     );
 
     if (damage.applied) {
@@ -131,8 +183,12 @@ export class CombatController {
     direction: Phaser.Math.Vector2,
     spreadDegrees: number,
   ): Phaser.Math.Vector2 {
-    const baseAngle = Math.atan2(direction.y, direction.x);
-    const spreadRadians = Phaser.Math.DegToRad(spreadDegrees);
+    const baseAngle = Math.atan2(
+      direction.y,
+      direction.x,
+    );
+    const spreadRadians =
+      Phaser.Math.DegToRad(spreadDegrees);
     const offset = Phaser.Math.FloatBetween(
       -spreadRadians,
       spreadRadians,

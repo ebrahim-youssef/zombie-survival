@@ -19,69 +19,77 @@ interface PlayerConfig {
 }
 ```
 
-Initial target:
-
-```ts
-{
-  baseMoveSpeed: 180,
-  diagonalMultiplier: 1.25,
-  maxHealth: 150,
-  regenDelayMs: 2500,
-  regenPerSecond: 100,
-  meleeDamage: 150,
-  meleeRange: 64,
-  meleeArcDegrees: 70,
-  meleeCooldownMs: 775,
-  interactionRange: 72
-}
-```
-
 ## Weapons
 
 ```ts
-type WeaponId = "mr6" | "kuda" | "kn44" | "krm262" | "brm" | "drakon";
+type WeaponId =
+  | "mr6"
+  | "kuda"
+  | "kn44"
+  | "krm262"
+  | "brm"
+  | "drakon";
 
 interface WeaponDefinition {
   id: WeaponId;
   name: string;
+  weaponClass:
+    | "pistol"
+    | "smg"
+    | "assault-rifle"
+    | "shotgun"
+    | "lmg"
+    | "sniper";
   fireMode: "semi" | "auto" | "pump";
   rpm: number;
   magazineSize: number;
+  startingReserveAmmo: number;
   maxReserveAmmo: number;
   loadedReloadMs: number;
   emptyReloadMs: number;
-  minDamage: number;
   maxDamage: number;
+  minDamage: number;
+  falloffStart: number;
+  falloffEnd: number;
   spreadDegrees: number;
   pelletCount: number;
-  penetration: {
-    zombies: number;
-    walls: number;
-  };
-  wallPrice?: number;
+  tracerDurationMs: number;
+  tracerMaxDistance: number;
 }
 ```
 
-Runtime ammo state must be separate from immutable definitions.
+The 2D falloff distances are adaptations chosen for the room scale.
+
+Runtime ammo and reload state live in `WeaponController`, separate from immutable weapon definitions.
 
 ## Inventory
 
-```ts
-interface InventoryState {
-  slots: [WeaponState | null, WeaponState | null];
-  activeSlot: 0 | 1;
-}
+Two slots only:
+
+```text
+Slot 1: MR6
+Slot 2: empty
 ```
+
+Rules:
+
+- acquisition fills an empty slot first;
+- if both are full, replace the equipped slot;
+- acquisition equips the newly received weapon;
+- an already-owned weapon is not duplicated;
+- switching cancels an in-progress reload without transferring ammo;
+- 1/2 selects slots;
+- mouse wheel cycles between owned slots.
+
+The acquisition API is implemented in Phase 5; wall buys and Mystery Box call it in Phase 6.
 
 ## Wave pure functions
 
 - `getZombieHealth(round)`
 - `getZombieCount(round)`
 - `getMaxAliveZombies(round)`
-- later: `getZombieMoveSpeed(round)`
-- later: `getSpawnInterval(round)`
-
-Pure scaling functions should be unit-testable without Phaser.
+- `getZombieMoveSpeed(round)`
+- `getSpawnIntervalMs(round)`
 
 ## Economy
 
@@ -94,5 +102,3 @@ Mystery Box: 950
 MR6: 500
 Kuda: 1250
 ```
-
-No gameplay magic numbers should be buried inside entity methods.

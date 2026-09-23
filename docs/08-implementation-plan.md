@@ -20,42 +20,43 @@ Status: **complete**
 
 Status: **complete**
 
-- BO3-style zombie health/count functions.
-- real Round 1 count.
-- timed spawn scheduler.
-- randomized window selection.
-- maximum two consecutive spawns from one window.
-- per-round active-zombie cap up to 24.
-- increasing spawn pressure.
-- modest zombie-speed scaling.
-- round-clear detection.
-- ~5-second intermission.
-- automatic next round.
-- live round/spawn/alive HUD.
-- game over reports actual round.
-
-Spawn interval and movement-speed scaling are explicit 2D adaptations, not claimed as exact BO3 engine timings.
-
 ## Phase 5 — Weapons + inventory
 
-Status: **next**
+Status: **complete**
 
+- MR6.
 - Kuda.
 - KN-44.
 - KRM-262.
 - BRM.
 - Drakon.
+- typed weapon-definition registry.
+- weapon-specific RPM, ammo, reload, damage, falloff and spread.
+- shotgun 4-pellet hitscan.
 - two-slot inventory.
-- switching.
-- shotgun pellets.
+- slot 1 starts with MR6.
+- slot 2 starts empty.
+- acquisition fills empty slot before replacing active slot.
+- acquisition equips the new weapon.
+- no duplicate owned weapons.
+- 1/2 switching.
+- mouse-wheel switching.
+- switching cancels reload without refilling.
+- HUD inventory slot state.
+
+KRM reload remains a single full-mag timer in the MVP; per-shell reload can be added later without changing inventory ownership/state boundaries.
 
 ## Phase 6 — Economy/interactions
 
-- wall buys.
-- ammo refills.
+Status: **next**
+
+- MR6 wall buy.
+- Kuda wall buy.
+- owned-wall-weapon ammo refills.
 - Mystery Box.
-- prompts.
+- interaction prompts.
 - insufficient-points feedback.
+- use Phase 5 inventory acquisition API.
 
 ## Phase 7 — UI/audio/persistence
 

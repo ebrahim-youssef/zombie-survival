@@ -1,6 +1,10 @@
-import type { WeaponDefinition } from "./weaponDefinitions";
+import type {
+  WeaponDefinition,
+  WeaponId,
+} from "./weaponDefinitions";
 
 export interface WeaponSnapshot {
+  id: WeaponId;
   name: string;
   magazineAmmo: number;
   reserveAmmo: number;
@@ -15,9 +19,15 @@ export class WeaponController {
   private reloadCompleteAt: number | null = null;
   private lastShotAt = Number.NEGATIVE_INFINITY;
 
-  constructor(readonly definition: WeaponDefinition) {
+  constructor(
+    readonly definition: WeaponDefinition,
+    reserveAmmo = definition.startingReserveAmmo,
+  ) {
     this.magazineAmmo = definition.magazineSize;
-    this.reserveAmmo = definition.startingReserveAmmo;
+    this.reserveAmmo = Math.max(
+      0,
+      Math.min(definition.maxReserveAmmo, reserveAmmo),
+    );
   }
 
   get isReloading(): boolean {
@@ -55,12 +65,18 @@ export class WeaponController {
     }
 
     const shotIntervalMs = 60_000 / this.definition.rpm;
-    if (now - this.lastShotAt < shotIntervalMs) return false;
+
+    if (now - this.lastShotAt < shotIntervalMs) {
+      return false;
+    }
 
     this.magazineAmmo -= 1;
     this.lastShotAt = now;
 
-    if (this.magazineAmmo === 0 && this.reserveAmmo > 0) {
+    if (
+      this.magazineAmmo === 0 &&
+      this.reserveAmmo > 0
+    ) {
       this.startReload(now);
     }
 
@@ -70,7 +86,13 @@ export class WeaponController {
   startReload(now: number): boolean {
     if (this.isReloading) return false;
     if (this.reserveAmmo <= 0) return false;
-    if (this.magazineAmmo >= this.definition.magazineSize) return false;
+
+    if (
+      this.magazineAmmo >=
+      this.definition.magazineSize
+    ) {
+      return false;
+    }
 
     const duration =
       this.magazineAmmo === 0
@@ -93,6 +115,7 @@ export class WeaponController {
 
   snapshot(): WeaponSnapshot {
     return {
+      id: this.definition.id,
       name: this.definition.name,
       magazineAmmo: this.magazineAmmo,
       reserveAmmo: this.reserveAmmo,
@@ -105,7 +128,10 @@ export class WeaponController {
   private finishReload(): void {
     const needed =
       this.definition.magazineSize - this.magazineAmmo;
-    const transferred = Math.min(needed, this.reserveAmmo);
+    const transferred = Math.min(
+      needed,
+      this.reserveAmmo,
+    );
 
     this.magazineAmmo += transferred;
     this.reserveAmmo -= transferred;

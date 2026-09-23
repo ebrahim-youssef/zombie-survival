@@ -33,6 +33,7 @@ export class GameScene extends Phaser.Scene {
     this.arena = new Arena(this);
 
     const worldBounds = this.arena.getCameraBounds(220);
+
     this.physics.world.setBounds(
       worldBounds.x,
       worldBounds.y,
@@ -42,9 +43,16 @@ export class GameScene extends Phaser.Scene {
 
     const spawn = this.arena.spawnPoint;
 
-    this.player = new Player(this, spawn.x, spawn.y);
+    this.player = new Player(
+      this,
+      spawn.x,
+      spawn.y,
+    );
     this.runState = new RunState();
-    this.desktopInput = new DesktopInput(this, this.cameras.main);
+    this.desktopInput = new DesktopInput(
+      this,
+      this.cameras.main,
+    );
     this.crosshair = new Crosshair(this);
     this.hud = new HUD(this);
 
@@ -85,7 +93,10 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  override update(time: number, delta: number): void {
+  override update(
+    time: number,
+    delta: number,
+  ): void {
     if (
       !this.arena ||
       !this.player ||
@@ -112,17 +123,26 @@ export class GameScene extends Phaser.Scene {
     this.player.applyMovement(input.move);
     this.player.faceWorldPoint(input.aimWorld);
     this.arena.constrainPlayer(this.player);
-    this.crosshair.setWorldPosition(input.aimWorld);
+    this.crosshair.setWorldPosition(
+      input.aimWorld,
+    );
 
     this.player.updateSurvival(time, delta);
-
     this.waves.update(time);
 
-    const healthBeforeZombieUpdate = this.player.health;
+    const healthBeforeZombieUpdate =
+      this.player.health;
+
     this.zombies.update(time);
 
-    if (this.player.health < healthBeforeZombieUpdate) {
-      this.cameras.main.shake(90, 0.0025);
+    if (
+      this.player.health <
+      healthBeforeZombieUpdate
+    ) {
+      this.cameras.main.shake(
+        90,
+        0.0025,
+      );
     }
 
     if (this.player.isDead) {
@@ -132,7 +152,10 @@ export class GameScene extends Phaser.Scene {
 
     this.combat.update(input, time);
 
-    for (const award of this.runState.consumePointAwards()) {
+    for (
+      const award of
+        this.runState.consumePointAwards()
+    ) {
       this.hud.showPointGain(award);
     }
 
@@ -157,7 +180,11 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.hud.updateWeapon(
-      this.combat.weapon.snapshot(),
+      this.combat.inventory.activeWeapon.snapshot(),
+    );
+
+    this.hud.updateInventory(
+      this.combat.inventory.snapshot(),
     );
 
     this.hud.updateWave(

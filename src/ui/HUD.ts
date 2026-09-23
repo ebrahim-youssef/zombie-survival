@@ -1,5 +1,8 @@
 import Phaser from "phaser";
 import type { RunState } from "../game/RunState";
+import type {
+  InventorySlotSnapshot,
+} from "../weapons/InventoryController";
 import type { WeaponSnapshot } from "../weapons/WeaponController";
 import type { WaveSnapshot } from "../zombies/WaveController";
 
@@ -9,6 +12,7 @@ export class HUD {
   private readonly waveStateText: Phaser.GameObjects.Text;
   private readonly healthPointsText: Phaser.GameObjects.Text;
   private readonly ammoText: Phaser.GameObjects.Text;
+  private readonly inventoryText: Phaser.GameObjects.Text;
   private readonly phaseText: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene) {
@@ -53,8 +57,19 @@ export class HUD {
       .setScrollFactor(0)
       .setDepth(2000);
 
+    this.inventoryText = scene.add
+      .text(camera.width / 2, camera.height - 45, "", {
+        align: "center",
+        fontFamily: "monospace",
+        fontSize: "15px",
+        color: "#d8d3c7",
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(2000);
+
     this.phaseText = scene.add
-      .text(camera.width / 2, 22, "PHASE 4 • WAVES", {
+      .text(camera.width / 2, 22, "PHASE 5 • WEAPONS + INVENTORY", {
         fontFamily: "monospace",
         fontSize: "14px",
         color: "#b8ac86",
@@ -75,10 +90,15 @@ export class HUD {
   }
 
   updateWave(snapshot: WaveSnapshot): void {
-    this.roundText.setText(`ROUND ${snapshot.round}`);
+    this.roundText.setText(
+      `ROUND ${snapshot.round}`,
+    );
 
     if (snapshot.phase === "intermission") {
-      const seconds = Math.ceil(snapshot.nextRoundInMs / 1000);
+      const seconds = Math.ceil(
+        snapshot.nextRoundInMs / 1000,
+      );
+
       this.waveStateText.setText(
         `ROUND CLEAR • NEXT ROUND IN ${seconds}s`,
       );
@@ -91,20 +111,45 @@ export class HUD {
   }
 
   updateWeapon(snapshot: WeaponSnapshot): void {
-    const reload = snapshot.isReloading ? "   RELOADING" : "";
+    const reload = snapshot.isReloading
+      ? "   RELOADING"
+      : "";
 
     this.ammoText.setText(
       `${snapshot.name}   ${snapshot.magazineAmmo} / ${snapshot.reserveAmmo}${reload}`,
     );
   }
 
+  updateInventory(
+    slots: readonly [
+      InventorySlotSnapshot,
+      InventorySlotSnapshot,
+    ],
+  ): void {
+    const labels = slots.map((slot) => {
+      const name = slot.name ?? "EMPTY";
+      return slot.active
+        ? `[${slot.slot}: ${name}]`
+        : `${slot.slot}: ${name}`;
+    });
+
+    this.inventoryText.setText(
+      labels.join("    "),
+    );
+  }
+
   showPointGain(amount: number): void {
     const popup = this.scene.add
-      .text(28, this.scene.cameras.main.height - 78, `+${amount}`, {
-        fontFamily: "monospace",
-        fontSize: "16px",
-        color: "#f0d27a",
-      })
+      .text(
+        28,
+        this.scene.cameras.main.height - 78,
+        `+${amount}`,
+        {
+          fontFamily: "monospace",
+          fontSize: "16px",
+          color: "#f0d27a",
+        },
+      )
       .setScrollFactor(0)
       .setDepth(2100);
 
@@ -161,6 +206,7 @@ export class HUD {
     this.waveStateText.destroy();
     this.healthPointsText.destroy();
     this.ammoText.destroy();
+    this.inventoryText.destroy();
     this.phaseText.destroy();
   }
 }

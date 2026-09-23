@@ -4,31 +4,25 @@ Client-only pseudo-isometric zombie survival game prototype.
 
 ## Current status
 
-**Phase 4 — waves**
+**Phase 5 — weapons + inventory**
 
 Implemented:
 
 - Vite 8 + TypeScript 7 strict mode.
 - Phaser 3.90 + Arcade Physics.
-- Responsive 1280×720 logical canvas.
-- Pseudo-isometric arena with four zombie windows.
-- Player movement/aiming/crosshair/camera foundation.
-- MR6 semi-auto hitscan combat, ammo and reload.
-- Zombie window entry, pursuit, attack, death and corpse fade.
-- Player HP, damage feedback and regeneration.
-- Gun/melee zombie damage and BO3-style point awards.
-- Real Round 1 with 6 zombies.
-- BO3-style zombie count and health scaling.
-- Spawn scheduler with increasing round pressure.
-- Randomized window selection.
-- No more than two consecutive spawns from the same window.
-- Per-round concurrent-alive cap up to 24.
-- Round clear detection.
-- ~5-second intermission.
-- Automatic next-round start.
-- Modest round-based zombie speed scaling.
-- Live round/spawn/alive HUD.
-- Game-over screen reports the actual current round.
+- Pseudo-isometric arena and four zombie windows.
+- player movement, independent aim and camera foundation.
+- full wave progression and BO3-inspired round scaling.
+- MR6, Kuda, KN-44, KRM-262, BRM and Drakon definitions.
+- weapon-specific fire cadence, ammo, reload, damage falloff and spread.
+- KRM 4-pellet hitscan.
+- two weapon slots.
+- MR6 starts in slot 1 and slot 2 starts empty.
+- acquisition fills empty slot before replacing equipped slot.
+- 1/2 and mouse-wheel switching.
+- switching cancels reload without refilling.
+- inventory HUD.
+- gun/melee zombie damage, scoring, health/regen and game over.
 - GitHub CI running strict TypeScript + production Vite build.
 
 ## Runtime
@@ -58,6 +52,6 @@ Production output: `dist/`.
 
 ## Next implementation slice
 
-**Phase 5 — weapons + inventory:** Kuda, KN-44, KRM-262, BRM, Drakon, two weapon slots, switching and shotgun pellet behavior.
+**Phase 6 — economy + interactions:** MR6/Kuda wall buys, half-price owned-weapon ammo refills, Mystery Box, interaction prompts and insufficient-points feedback.
 
 See `docs/08-implementation-plan.md`.
