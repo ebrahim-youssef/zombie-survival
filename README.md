@@ -42,10 +42,20 @@ Output directory: `dist`
 
 ## Verification scope
 
-GitHub CI executes unit/regression tests, strict TS and a production Vite
-build. Live gameplay on actual Android/iOS devices and production-grade
-sprite/animation/audio assets are still outstanding; see
-`docs/08-implementation-plan.md`.
+GitHub CI now executes:
+- unit/regression tests;
+- strict TypeScript validation;
+- production Vite build;
+- Chromium browser smoke tests for desktop restart flow;
+- mobile landscape/portrait viewport filling;
+- right-stick auto-fire;
+- simultaneous movement + aiming touch input;
+- touch release stopping fire.
+
+These browser tests materially cover the regressions found during device QA,
+but they do **not** replace testing on physical Android/iOS hardware.
+Final artist-authored sprites/audio and physical-device acceptance remain
+outstanding; see `docs/08-implementation-plan.md`.
 
 ## Device QA fixes / angled sprite preview
 

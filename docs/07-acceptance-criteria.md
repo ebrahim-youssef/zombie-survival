@@ -87,8 +87,13 @@
 ## Phase 9B device-acceptance regression checklist
 
 Automated CI includes pure mobile targeting/layout tests, unit tests and
-Chromium smoke tests. Manual checks below must be observed rather than
-inferred from successful compilation.
+real Chromium smoke tests. The following regressions are browser-verified:
+desktop restart, landscape/portrait viewport fill, touch-mode selection,
+right-stick auto-fire, simultaneous move+aim/fire, release-to-stop-fire,
+and touch Restart/Main Menu.
+
+Manual checks below still require observation on physical hardware rather
+than being inferred from headless Chromium.
 
 ### Desktop browsers
 - [ ] Open the game, start and survive a few rounds.

@@ -58,13 +58,39 @@ The build/test pipeline is not a substitute for live gameplay acceptance.
 4. Manual desktop/mobile acceptance.
 5. No recurring console errors or leaked effects.
 
-## Phase 9B — device QA and character art
+## Phase 9B — device QA and character presentation
 
-Status: **implementation in progress; physical-device acceptance pending**
+Status: **browser-verified implementation complete; physical-device acceptance pending**
 
-- Game-over input moved into an independent overlay scene with buttons and Enter/Space.
-- Full-viewport RESIZE removes 16:9 FIT letterboxing on mobile.
-- Camera zoom and UI/action positions respond to landscape/portrait resize.
-- Mobile right-stick firing and visible-target aim assist (default).
-- Optional auto-aim + fire button and manual input modes, stored locally.
-- Full-body angled character sprites and animation pass follows.
+Implemented:
+- game-over controls moved to a dedicated DOM overlay, isolated from the
+  paused gameplay/touch layer;
+- Restart / Main Menu buttons plus Enter/Space/Esc keyboard handling;
+- full-viewport `Scale.RESIZE` replaces 1280×720 FIT letterboxing;
+- responsive HUD, menus and virtual controls for landscape/portrait;
+- mobile right-stick auto-fire with wall-aware forward-cone aim assist;
+- optional auto-aim + FIRE and fully manual mobile modes persisted in settings;
+- reliable DOM Pointer Events + pointer capture for simultaneous touch controls;
+- right-stick release clears firing state;
+- 48×64 original full-body angled player/zombie character frames;
+- eight directional visual facings without rotating a top-down block;
+- player idle/walk/shoot/melee/reload/hurt presentation states;
+- zombie walk/attack/hurt/death presentation states;
+- feet-centered physics bodies independent of the taller visual sprite.
+
+Automated browser verification now covers:
+- desktop game-over restart;
+- mobile landscape canvas filling the viewport;
+- portrait canvas filling the viewport;
+- mobile touch mode activation;
+- right-stick firing ammunition consumption;
+- simultaneous movement + aim/fire;
+- fire stopping after touch release;
+- mobile Restart and Main Menu game-over interactions.
+
+Still pending:
+- physical Android Chrome acceptance;
+- physical iPhone Safari acceptance including address-bar/safe-area behavior;
+- visual review/tuning of the generated character frames on real devices;
+- artist-authored final sprite sheets if the procedural preview is not accepted;
+- final performance profiling and complete MVP acceptance checklist.
