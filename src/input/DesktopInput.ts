@@ -48,7 +48,11 @@ export class DesktopInput implements InputSource {
     this.slot2 = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.escape = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
-    scene.input.on(Phaser.Input.Events.POINTER_WHEEL, this.onWheel, this);
+    scene.input.on(
+      Phaser.Input.Events.POINTER_WHEEL,
+      this.onWheel,
+      this,
+    );
   }
 
   read(): InputFrame {
@@ -56,15 +60,30 @@ export class DesktopInput implements InputSource {
     const leftDown = pointer.leftButtonDown();
     const rightDown = pointer.rightButtonDown();
 
-    pointer.positionToCamera(this.camera, this.aimWorld);
+    pointer.positionToCamera(
+      this.camera,
+      this.aimWorld,
+    );
 
     const moveX =
-      Number(this.movement.d.isDown || this.cursors.right.isDown) -
-      Number(this.movement.a.isDown || this.cursors.left.isDown);
+      Number(
+        this.movement.d.isDown ||
+          this.cursors.right.isDown,
+      ) -
+      Number(
+        this.movement.a.isDown ||
+          this.cursors.left.isDown,
+      );
 
     const moveY =
-      Number(this.movement.s.isDown || this.cursors.down.isDown) -
-      Number(this.movement.w.isDown || this.cursors.up.isDown);
+      Number(
+        this.movement.s.isDown ||
+          this.cursors.down.isDown,
+      ) -
+      Number(
+        this.movement.w.isDown ||
+          this.cursors.up.isDown,
+      );
 
     this.moveVector.set(moveX, moveY);
 
@@ -72,17 +91,35 @@ export class DesktopInput implements InputSource {
       move: this.moveVector,
       aimWorld: this.aimWorld,
       fireHeld: leftDown,
-      firePressed: leftDown && !this.previousLeftDown,
-      meleePressed: rightDown && !this.previousRightDown,
-      reloadPressed: Phaser.Input.Keyboard.JustDown(this.reload),
-      interactPressed: Phaser.Input.Keyboard.JustDown(this.interact),
-      slotPressed: Phaser.Input.Keyboard.JustDown(this.slot1)
-        ? 1
-        : Phaser.Input.Keyboard.JustDown(this.slot2)
-          ? 2
-          : 0,
+      firePressed:
+        leftDown &&
+        !this.previousLeftDown,
+      meleePressed:
+        rightDown &&
+        !this.previousRightDown,
+      reloadPressed:
+        Phaser.Input.Keyboard.JustDown(
+          this.reload,
+        ),
+      interactPressed:
+        Phaser.Input.Keyboard.JustDown(
+          this.interact,
+        ),
+      slotPressed:
+        Phaser.Input.Keyboard.JustDown(
+          this.slot1,
+        )
+          ? 1
+          : Phaser.Input.Keyboard.JustDown(
+                this.slot2,
+              )
+            ? 2
+            : 0,
       cycleWeapon: this.consumeWheel(),
-      pausePressed: Phaser.Input.Keyboard.JustDown(this.escape),
+      pausePressed:
+        Phaser.Input.Keyboard.JustDown(
+          this.escape,
+        ),
     };
 
     this.previousLeftDown = leftDown;
@@ -91,8 +128,21 @@ export class DesktopInput implements InputSource {
     return frame;
   }
 
+  reset(): void {
+    this.previousLeftDown = false;
+    this.previousRightDown = false;
+    this.wheelDelta = 0;
+    this.moveVector.set(0, 0);
+  }
+
   destroy(): void {
-    this.scene.input.off(Phaser.Input.Events.POINTER_WHEEL, this.onWheel, this);
+    this.reset();
+
+    this.scene.input.off(
+      Phaser.Input.Events.POINTER_WHEEL,
+      this.onWheel,
+      this,
+    );
   }
 
   private onWheel(
@@ -113,6 +163,7 @@ export class DesktopInput implements InputSource {
           : -1;
 
     this.wheelDelta = 0;
+
     return direction;
   }
 }

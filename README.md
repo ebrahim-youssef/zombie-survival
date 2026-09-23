@@ -4,55 +4,39 @@ Client-only pseudo-isometric zombie survival game prototype.
 
 ## Current status
 
-**Phase 7 — UI, audio and persistence**
+**Phase 8 — mobile input implementation**
 
-Implemented:
-
-- Vite 8 + TypeScript 7 strict mode.
-- Phaser 3.90 + Arcade Physics.
-- pseudo-isometric arena and zombie-window loop.
-- player movement, aim, combat and regeneration.
-- BO3-inspired wave progression.
-- six weapons and two-slot inventory.
-- wall buys and Mystery Box economy.
-- contextual interaction prompts.
-- real pause/resume overlay.
-- pause settings/restart/main-menu actions.
-- settings panel with master volume and damage-number toggle.
-- localStorage versioned persistence.
-- persisted high score and highest round.
-- menu and game-over record display.
-- generated Web Audio SFX hooks; no proprietary audio assets.
-- optional floating damage numbers.
-- GitHub CI running strict TypeScript + production Vite build.
-
-## Runtime
-
-Node is pinned with `.node-version` to Node 22.16.0.
+- Vite 8 + TypeScript 7 strict mode, Phaser 3.90 + Arcade Physics.
+- Single-room zombie survival, wave progression, health and combat.
+- Six weapon definitions, two-slot inventory, wall buys and Mystery Box.
+- Pause/settings UI and browser-local score/settings persistence.
+- Generated Web Audio SFX; no proprietary audio.
+- Unified `InputFrame` adapter for desktop and touch gameplay.
+- Touch: left movement stick, right aim stick, fire, melee, reload, interact, swap, pause.
+- Multi-pointer controls and reset on pause/shutdown.
+- Safe-area-aware canvas container and portrait rotation hint.
+- Strict TypeScript and production Vite build in GitHub Actions.
 
 ## Run locally
 
-```bash
+Use Node 22.16.0 (see `.node-version`).
+
+```sh
 npm install
 npm run dev
-```
-
-Verification:
-
-```bash
 npm run typecheck
 npm run build
 ```
 
-Production output: `dist/`.
-
 ## Cloudflare
 
 - Build command: `npm run build`
-- Build output directory: `dist`
+- Output directory: `dist`
 
-## Next implementation slice
+## Validation status
 
-**Phase 8 — mobile input:** virtual movement, touch aiming, fire/melee/reload/interact/swap/pause controls and safe-area-aware responsive positioning.
+CI verifies types and bundle. Mobile device ergonomics and real-browser gameplay still require manual testing; a successful build alone does not establish full gameplay acceptance.
 
-See `docs/08-implementation-plan.md`.
+## Next
+
+**Phase 9 — polish and hardening**: art, animations, debug tools, gameplay acceptance and performance. See `docs/08-implementation-plan.md`.
