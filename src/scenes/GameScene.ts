@@ -9,6 +9,7 @@ import { RunState } from "../game/RunState";
 import { InteractionController } from "../interactions/InteractionController";
 import { InputController } from "../input/InputController";
 import { LocalSettingsStore } from "../persistence/LocalSettingsStore";
+import { LightingController } from "../lighting/LightingController";
 import { Crosshair } from "../ui/Crosshair";
 import { HUD } from "../ui/HUD";
 import { Arena } from "../world/Arena";
@@ -31,6 +32,7 @@ export class GameScene extends Phaser.Scene {
   private audio: AudioController | undefined;
   private debug: DebugController | undefined;
   private damageFlash: Phaser.GameObjects.Rectangle | undefined;
+  private lighting: LightingController | undefined;
   private clock = new GameplayClock();
   private gameOver = false;
 
@@ -48,6 +50,11 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, spawn.x, spawn.y);
     this.runState = new RunState();
     this.audio = new AudioController(this);
+    this.lighting = new LightingController(
+      this,
+      this.arena.center.x - 205,
+      this.arena.center.y - 105,
+    );
     this.inputController = new InputController(
       this,this.cameras.main,this.player,this.arena,
       ()=>this.zombies?.getAliveZombies()??[],
@@ -59,6 +66,7 @@ export class GameScene extends Phaser.Scene {
     this.waves = new WaveController(this.arena, this.zombies);
     this.combat = new CombatController(
       this, this.player, this.arena, this.zombies, this.runState, this.audio,
+      this.lighting,
     );
     this.interactions = new InteractionController(
       this.player, this.arena, this.combat.inventory, this.runState,
@@ -250,6 +258,10 @@ export class GameScene extends Phaser.Scene {
     return {killed:zombie.isDead,pointsGained:this.runState.points-before};
   }
 
+  debugLightingState():ReturnType<LightingController["snapshot"]>|null{
+    return this.lighting?.snapshot()??null;
+  }
+
   debugPerformanceState():{
     gameObjects:number;
     tweens:number;
@@ -408,6 +420,7 @@ export class GameScene extends Phaser.Scene {
     this.cameraController?.destroy();
     this.arena?.destroy();
     this.audio?.destroy();
+    this.lighting?.destroy();
     this.damageFlash?.destroy();
     this.game.canvas.style.cursor = "default";
     this.debug = undefined;
@@ -423,6 +436,7 @@ export class GameScene extends Phaser.Scene {
     this.player = undefined;
     this.arena = undefined;
     this.audio = undefined;
+    this.lighting = undefined;
     this.damageFlash = undefined;
     this.gameOver = false;
   }

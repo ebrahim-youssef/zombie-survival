@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { isDebugSession } from "../debug/isDebugSession";
 import type { AudioController } from "../audio/AudioController";
+import type { LightingController } from "../lighting/LightingController";
 import { PLAYER_CONFIG } from "../config/player";
 import type { Player } from "../entities/Player";
 import type { Zombie } from "../entities/Zombie";
@@ -38,6 +39,7 @@ export class CombatController {
     private readonly zombies: ZombieController,
     private readonly runState: RunState,
     private readonly audio: AudioController,
+    private readonly lighting?: LightingController,
   ) {
     this.effects = new CombatEffects(scene);
     this.melee = new MeleeController(this.effects,arena.wallSegments);
@@ -76,6 +78,7 @@ export class CombatController {
 
     this.audio.play("shot");
     this.player.beginAction("shoot",now);
+    this.lighting?.muzzleFlash(this.player.getMuzzlePosition(aimDirection));
     this.fireWeapon(input.aimWorld, weapon.definition, now);
   }
 

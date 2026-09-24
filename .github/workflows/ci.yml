@@ -52,6 +52,7 @@ jobs:
             test-results/debug-hitboxes-preview.png
             test-results/aligned-hurtbox-preview.png
             test-results/performance-soak.json
+            test-results/lighting-experiment.png
           retention-days: 14
           if-no-files-found: error
 
