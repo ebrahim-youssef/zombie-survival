@@ -62,6 +62,7 @@ export class GameScene extends Phaser.Scene {
     );
     this.interactions = new InteractionController(
       this.player, this.arena, this.combat.inventory, this.runState,
+      this.audio,
     );
     this.cameraController = new CameraController(
       this.cameras.main,this.player,this.arena,

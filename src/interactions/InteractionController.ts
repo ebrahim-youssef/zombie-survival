@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { ECONOMY_CONFIG } from "../config/economy";
 import { PLAYER_CONFIG } from "../config/player";
 import type { Player } from "../entities/Player";
+import type { AudioController } from "../audio/AudioController";
 import type { RunState } from "../game/RunState";
 import type { InputFrame } from "../types/game";
 import type { InventoryController } from "../weapons/InventoryController";
@@ -35,6 +36,7 @@ export class InteractionController {
     arena: Arena,
     inventory: InventoryController,
     runState: RunState,
+    private readonly audio?: AudioController,
   ) {
     this.wallBuys = [
       new WallBuy(
@@ -88,6 +90,23 @@ export class InteractionController {
         : nearby.target.interact(now);
 
     this.setStatus(message, now);
+    if(
+      message.startsWith("Bought ") ||
+      message.includes("ammo refilled") ||
+      message.startsWith("Took ")
+    ){
+      this.audio?.play("purchase");
+    }else if(message==="Mystery Box rolling..."){
+      this.audio?.play("box");
+    }else if(
+      message.startsWith("Not enough") ||
+      message.includes("already full") ||
+      message.includes("still cycling")
+    ){
+      this.audio?.play("error");
+    }else{
+      this.audio?.play("ui");
+    }
   }
 
   snapshot(): InteractionSnapshot {
