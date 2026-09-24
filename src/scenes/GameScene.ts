@@ -249,6 +249,29 @@ export class GameScene extends Phaser.Scene {
     return {killed:zombie.isDead,pointsGained:this.runState.points-before};
   }
 
+  debugPerformanceState():{
+    gameObjects:number;
+    tweens:number;
+    timers:number;
+    aliveZombies:number;
+    round:number;
+    actualFps:number;
+    loopDelta:number;
+    gameplayMs:number;
+  }|null{
+    if(!this.zombies||!this.waves)return null;
+    return {
+      gameObjects:this.children.length,
+      tweens:this.tweens.getAllTweens().length,
+      timers:this.time.getAllEvents().length,
+      aliveZombies:this.zombies.getAliveCount(),
+      round:this.waves.snapshot(this.clock.now).round,
+      actualFps:this.game.loop.actualFps,
+      loopDelta:this.game.loop.delta,
+      gameplayMs:this.clock.now,
+    };
+  }
+
   debugInteractionState():{
     points:number;
     prompt:string|null;

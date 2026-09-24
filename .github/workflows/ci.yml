@@ -51,6 +51,7 @@ jobs:
             test-results/placeholder-isometric.png
             test-results/debug-hitboxes-preview.png
             test-results/aligned-hurtbox-preview.png
+            test-results/performance-soak.json
           retention-days: 14
           if-no-files-found: error
 
