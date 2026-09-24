@@ -10,6 +10,7 @@ export interface LightingSnapshot{
   renderer:"webgl"|"canvas";
   lamp:{x:number;y:number;radius:number};
   activeMuzzleFlashes:number;
+  totalMuzzleFlashes:number;
 }
 
 /**
@@ -24,6 +25,7 @@ export class LightingController{
   private readonly lampRadius=210;
   private readonly lampObjects:Phaser.GameObjects.GameObject[]=[];
   private readonly flashes=new Set<TrackedFlash>();
+  private totalMuzzleFlashes=0;
 
   constructor(
     private readonly scene:Phaser.Scene,
@@ -37,6 +39,7 @@ export class LightingController{
   }
 
   muzzleFlash(position:Phaser.Math.Vector2):void{
+    this.totalMuzzleFlashes+=1;
     const object=this.webgl
       ? this.scene.lights
           .addPointLight(position.x,position.y,0xffc35a,96,1.65,.10)
@@ -44,7 +47,7 @@ export class LightingController{
       : this.createGlow(position.x,position.y,96,.9,905);
     const tracked={object};
     this.flashes.add(tracked);
-    this.scene.time.delayedCall(78,()=>{
+    this.scene.time.delayedCall(120,()=>{
       this.flashes.delete(tracked);
       if(object.active)object.destroy();
     });
@@ -55,6 +58,7 @@ export class LightingController{
       renderer:this.webgl?"webgl":"canvas",
       lamp:{x:this.lampPosition.x,y:this.lampPosition.y,radius:this.lampRadius},
       activeMuzzleFlashes:this.flashes.size,
+      totalMuzzleFlashes:this.totalMuzzleFlashes,
     };
   }
 
