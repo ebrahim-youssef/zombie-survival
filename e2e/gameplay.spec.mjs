@@ -202,15 +202,15 @@ test("hardening: pause freezes reload and wave/gameplay time",async({browser})=>
   await page.keyboard.press("KeyR");
   await page.waitForFunction(()=>window.__zombieSmoke?.timingState()?.weapon.isReloading);
 
-  const before=await page.evaluate(()=>window.__zombieSmoke.timingState());
   await page.keyboard.press("Escape");
   await page.waitForFunction(()=>window.__zombieSmoke?.isActive("pause"));
+  const pausedStart=await page.evaluate(()=>window.__zombieSmoke.timingState());
   await page.waitForTimeout(650);
-  const paused=await page.evaluate(()=>window.__zombieSmoke.timingState());
+  const pausedEnd=await page.evaluate(()=>window.__zombieSmoke.timingState());
 
-  expect(paused.now).toBe(before.now);
-  expect(paused.weapon).toEqual(before.weapon);
-  expect(paused.wave).toEqual(before.wave);
+  expect(pausedEnd.now).toBe(pausedStart.now);
+  expect(pausedEnd.weapon).toEqual(pausedStart.weapon);
+  expect(pausedEnd.wave).toEqual(pausedStart.wave);
 
   await page.keyboard.press("Escape");
   await page.waitForFunction(()=>!window.__zombieSmoke?.isActive("pause"));
@@ -219,7 +219,7 @@ test("hardening: pause freezes reload and wave/gameplay time",async({browser})=>
     {timeout:5000},
   );
   const after=await page.evaluate(()=>window.__zombieSmoke.timingState());
-  expect(after.now).toBeGreaterThan(before.now);
+  expect(after.now).toBeGreaterThan(pausedStart.now);
   expect(after.weapon.magazineAmmo).toBe(8);
   expect(after.weapon.reserveAmmo).toBe(31);
   expect(errors).toEqual([]);
