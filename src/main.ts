@@ -44,6 +44,10 @@ if(import.meta.env.DEV && new URLSearchParams(location.search).has("smoke")){
           zombie:dimensions("zombie-placeholder"),
         };
       },
+      pauseControlsVisible:():boolean=>{
+        const scene=game.scene.getScene("pause") as import("./scenes/PauseScene").PauseScene;
+        return scene.debugControlsVisible();
+      },
       forceGameOver:():void=>
         (game.scene.getScene("game") as GameScene).debugForceGameOver(),
     },

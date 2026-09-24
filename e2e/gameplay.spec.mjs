@@ -151,3 +151,33 @@ test("portrait mobile: game uses available viewport rather than a tiny FIT canva
   expect(errors).toEqual([]);
   await context.close();
 });
+
+
+test("desktop: pause menu exposes a working Controls panel",async({browser})=>{
+  const context=await browser.newContext({viewport:{width:1280,height:720}});
+  const page=await context.newPage();
+  const errors=[];
+  page.on("pageerror",error=>errors.push(error.message));
+  await page.goto("/?smoke=1");
+  await page.waitForFunction(()=>window.__zombieSmoke?.isActive("menu"));
+  await page.mouse.click(640,360);
+  await page.waitForFunction(()=>window.__zombieSmoke?.isActive("game"));
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(()=>window.__zombieSmoke?.isActive("pause"));
+
+  // Five pause items; Controls is the second, centered at the tested desktop layout.
+  await page.mouse.click(640,360-108+58);
+  await page.waitForFunction(()=>window.__zombieSmoke?.pauseControlsVisible());
+  expect(await page.evaluate(()=>window.__zombieSmoke.pauseControlsVisible())).toBe(true);
+
+  // Escape closes the panel first without resuming gameplay.
+  await page.keyboard.press("Escape");
+  expect(await page.evaluate(()=>window.__zombieSmoke.pauseControlsVisible())).toBe(false);
+  expect(await page.evaluate(()=>window.__zombieSmoke.isActive("pause"))).toBe(true);
+
+  // Second Escape resumes.
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(()=>!window.__zombieSmoke?.isActive("pause"));
+  expect(errors).toEqual([]);
+  await context.close();
+});
