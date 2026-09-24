@@ -174,31 +174,6 @@ export class GameScene extends Phaser.Scene {
   debugPlayerPosition():{x:number;y:number}|null{
     return this.player ? {x:this.player.x,y:this.player.y} : null;
   }
-  /** Read-only scene render QA, exposed only via opt-in smoke hook. */
-  debugStage3ArtState():{
-    room:ReturnType<Arena["getRenderState"]>;
-    playerDepth:number;
-    playerFootY:number;
-    camera:{scrollX:number;scrollY:number;width:number;height:number};
-    zombies:readonly {depth:number;enteredArena:boolean;footY:number}[];
-  }|null{
-    if(!import.meta.env.DEV||!this.arena||!this.player||!this.zombies)return null;
-    return {
-      room:this.arena.getRenderState(),
-      playerDepth:this.player.depth,
-      playerFootY:this.player.y,
-      camera:{
-        scrollX:this.cameras.main.scrollX,
-        scrollY:this.cameras.main.scrollY,
-        width:this.cameras.main.width,
-        height:this.cameras.main.height,
-      },
-      zombies:this.zombies.getAliveZombies().map(z=>({
-        depth:z.depth,enteredArena:z.enteredArena,footY:z.y,
-      })),
-    };
-  }
-
   debugCameraZoom():number{
     return this.cameras.main.zoom;
   }

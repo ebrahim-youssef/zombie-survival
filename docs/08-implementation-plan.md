@@ -204,3 +204,18 @@ corner angles, windows and night exterior on desktop. A desktop follow
 offset of 76px keeps the player lower in frame; compact touch stays
 centered and zoom remains 1. Board stripe contrast was also reduced.
 Chromium checks the wall/corners' actual screen positions on entry.
+
+## Visual baseline rollback — current
+
+Per product direction, **all Stage 3 art/palette/layer work and every
+post-placeholder character sprite pass are superseded and removed from
+runtime**. The active visual baseline is restored to the original Phase 1
+diamond pseudo-isometric room and the pre-art-pass 32×32 rotating
+player/zombie placeholders from commit `8b08f5570ed5`.
+
+This is a selective visual rollback, not a gameplay reset. Mobile input,
+responsive canvas, debug 3–0, Cloudflare `?debug=1`, game-over fixes,
+weapons, economy, scoring, wave logic and combat fixes remain. Combat
+hurtboxes are compact and centered on the restored placeholder sprites.
+Do not reintroduce generated production sprites, environment props,
+palette systems or alternative room projection until explicitly approved.

@@ -12,17 +12,17 @@ test("Stage 2: aligned projected torso is hittable by real gun fire",async({brow
   await page.keyboard.press("Digit4");
   const snapshot=await page.evaluate(()=>window.__zombieSmoke.debugState());
   expect(snapshot.hitboxes).toBe(true);
-  expect(snapshot.playerBody?.radius).toBe(15);
+  expect(snapshot.playerBody?.radius).toBe(11);
   expect(snapshot.playerCombat).toMatchObject({
-    radiusX:22,radiusY:36,
+    radiusX:16,radiusY:16,
   });
   const result=await page.evaluate(()=>window.__zombieSmoke.alignedShot());
   expect(result).not.toBeNull();
-  expect(result.visualWidth).toBe(96);
-  expect(result.playerFootY-result.playerCombatY).toBe(35);
-  expect(result.targetFootY-result.targetCombatY).toBe(35);
+  expect(result.visualWidth).toBe(32);
+  expect(result.playerFootY-result.playerCombatY).toBe(0);
+  expect(result.targetFootY-result.targetCombatY).toBe(0);
   expect(Math.abs(result.targetPhysicsFootY-result.targetFootY)).toBeLessThan(2);
-  expect(result.muzzleY).toBeLessThan(result.playerFootY);
+  expect(Math.abs(result.muzzleY-result.playerFootY)).toBeLessThan(2);
   expect(Math.abs(result.physicsFootY-result.playerFootY)).toBeLessThan(2);
   expect(result.ammoUsed).toBe(1);
   expect(result.killed).toBe(true);

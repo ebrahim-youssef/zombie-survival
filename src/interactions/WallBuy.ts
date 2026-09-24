@@ -1,6 +1,4 @@
 import Phaser from "phaser";
-import { ENV_TEXTURES, ensureEnvironmentArt } from "../art/EnvironmentArt";
-import { WORLD_DEPTH } from "../art/worldLayers";
 import type { RunState } from "../game/RunState";
 import type { InventoryController } from "../weapons/InventoryController";
 import {
@@ -14,7 +12,7 @@ export interface WallBuyPrices {
 }
 
 export class WallBuy {
-  private readonly marker: Phaser.GameObjects.Image;
+  private readonly marker: Phaser.GameObjects.Rectangle;
   private readonly label: Phaser.GameObjects.Text;
 
   constructor(
@@ -27,18 +25,23 @@ export class WallBuy {
   ) {
     const weapon = getWeaponDefinition(weaponId);
 
-    ensureEnvironmentArt(scene);
-    const depth = WORLD_DEPTH.wallDecal;
-    this.marker = scene.add.image(
-      position.x, position.y,
-      weaponId === "mr6" ? ENV_TEXTURES.wallBuyMr6 : ENV_TEXTURES.wallBuyKuda,
-    ).setScale(1.05).setDepth(depth);
+    this.marker = scene.add
+      .rectangle(
+        position.x,
+        position.y,
+        92,
+        34,
+        0x303329,
+        1,
+      )
+      .setStrokeStyle(2, 0xd6ad55, 0.9)
+      .setDepth(3);
 
     this.label = scene.add
       .text(
         position.x,
-        position.y + 28,
-        weapon.name + "  " + prices.weaponPrice,
+        position.y,
+        weapon.name,
         {
           fontFamily: "monospace",
           fontSize: "13px",
@@ -46,7 +49,7 @@ export class WallBuy {
         },
       )
       .setOrigin(0.5)
-      .setDepth(depth + .01);
+      .setDepth(4);
   }
 
   getPrompt(): string {

@@ -46,13 +46,11 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: cabin-art-preview
+          name: gameplay-preview
           path: |
-            test-results/cabin-art-preview.png
-            test-results/character-closeups.png
+            test-results/placeholder-isometric.png
             test-results/debug-hitboxes-preview.png
             test-results/aligned-hurtbox-preview.png
-            test-results/stage3-adventure-cabin.png
           retention-days: 14
           if-no-files-found: error
 

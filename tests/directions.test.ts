@@ -16,16 +16,3 @@ describe("eight-way sprite directions",()=>{
   });
 });
 
-describe("32-unit design, smooth 2x rasterization",()=>{
-  it("maintains 96px world silhouette with more native detail",()=>{
-    expect([CHARACTER_W,CHARACTER_H,CHARACTER_SCALE,CHARACTER_FEET_Y])
-      .toEqual([64,64,1.5,56]);
-    expect([CHARACTER_LOGICAL_SIZE,CHARACTER_DISPLAY_SIZE]).toEqual([32,96]);
-  });
-  it("keeps all eight direction and action frame names distinct",()=>{
-    expect(characterFrameCount("player","walk")).toBe(4);
-    expect(characterFrameCount("zombie","attack")).toBe(2);
-    expect(characterTexture("player","n","walk",0))
-      .not.toBe(characterTexture("player","s","walk",0));
-  });
-});

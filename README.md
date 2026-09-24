@@ -79,84 +79,25 @@ but they do **not** replace testing on physical Android/iOS hardware.
 Final artist-authored sprites/audio and physical-device acceptance remain
 outstanding; see `docs/08-implementation-plan.md`.
 
-## Device QA fixes / angled sprite preview
 
-- Full-viewport RESIZE and responsive camera/HUD/menu/touch layouts.
-- Game-over scene owns working Restart / Main Menu buttons and Enter / Space.
-- Mobile stick auto-fire + visible zombie aim assist by default; manual and
-  auto-aim + fire button modes available in Settings.
-- Original procedural full-body angled 32×32 chunky native character frames and action
-  animations for eight facings replace the old rotating top-down blocks.
-- No copied Zelda or Call of Duty artwork is used.
-- Physical mobile device/visual acceptance remains necessary.
+## Visual rollback — original placeholder baseline
 
-## Arcade cabin art pass
+The experimental directional character art, cabin props, Zelda-like palette,
+layer system and generated HUD sprites have been removed.
 
-The game now produces original 32 × 32 low-resolution player/zombie frames
-at a crisp 3× world display scale, preserving the feet-based collision
-layout and all eight movement/aim facings. This is an original visual
-interpretation of the approved arcade-zombie screenshot, not copied
-commercial sprite art.
+The active visual baseline is intentionally the **first pseudo-isometric
+prototype**:
+- original grey diamond arena and diagonal grid;
+- four simple wall gaps/windows;
+- original rotating 32×32 player placeholder;
+- original rotating 32×32 zombie placeholder;
+- simple rectangular Mystery Box and wall-buy markers;
+- text/rectangle HUD.
 
-The arena now uses a four-window projected trapezoid room with warm plank flooring,
-timber cabin walls, four shattered windows, moonlit blue exterior,
-bookshelves, lanterns, barrels, crates, carpet, and aged wall décor.
-Wall purchases have stencilled gun plates; the Mystery Box is now a
-glowing illustrated chest. The HUD has a portrait, pixel hearts, an
-amber score, red-round presentation, and an illustrated ammo panel.
+Gameplay systems added later remain: mobile controls, debug keys, restart,
+weapons/economy/waves, pause-safe timers, Cloudflare QA mode and the
+current shooting/melee logic. Placeholder combat hitboxes were resized
+back to the compact 32×32 actors so the later hitbox fix remains valid.
 
-No image-generation service or runtime network dependency is needed:
-original pixel textures are generated deterministically in
-`src/art/CharacterArt.ts`, `EnvironmentArt.ts`, and `HudArt.ts`.
-The provided screenshot is **a visual target**; the interactive map
-still uses the agreed four-window arena geometry rather than being a
-one-to-one recreation of the reference room.
-
-## Character art refinement
-
-The player and zombie have a new **soft-edged original arcade character pass**:
-64×64 raster frames drawn on a 32×32 logical design grid and displayed at
-1.5×. Their effective footprint stays **96×96 world pixels** so camera framing,
-feet-based hitboxes and weapon reach are unchanged. Rounded head contours,
-nonrectangular limbs, layered facial shading and more expressive action frames
-replace the former large block shapes. The cabin, props and HUD stay as-is;
-only the HUD portrait is scaled to fit its existing frame. On every CI run,
-`cabin-art-preview` now contains both a gameplay screenshot and a character
-close-up sheet for visual review.
-
-## Stage 2 — Visual hitbox alignment
-
-Movement uses small centered circular foot colliders (world radius 15), while
-guns and melee use an upper-body ellipse aligned with the character's
-64px raster displayed at 1.5×. The mobile auto-aim and barrel origin
-now agree with the same combat geometry.
-
-In a QA session press `4`: green/pink = movement circles at the feet,
-lime/cyan = larger body hurtboxes covering the visible head and torso.
-Press `3` to also reveal recent real raycasts. See the Stage 2 tests and
-`docs/08-implementation-plan.md` for numerical dimensions.
-
-## Stage 3 — Original angled-adventure cabin
-
-Stage 3 introduces the source-of-truth design contract in
-`docs/11-art-direction-and-depth-rules.md`: an original warm/cool palette,
-rounded readable three-quarter characters, a much larger low-taper room,
-and a strict world render-order model. This draws on the general
-angled-camera readability of classic Zelda-like adventure games without
-copying Nintendo's assets.
-
-The cabin now has approximately 51% more walkable floor area than
-the previous compact version, without hiding the rear wall from the
-desktop starting view.
-Window visuals, NPC entry points, hitscan openings and player bounds share
-the **same geometry**. Flat rugs, papers, ground decals and lighting always
-stay below actors. Tall furniture and the glowing Mystery Box sort against
-actors using their **feet**; outside zombies stay behind the wall until
-entering through a window. Front wall/ledge renders over characters only
-where it physically occupies the foreground.
-
-The player/zombie source frames and their Stage 2 damage/collision geometry
-remain unchanged; character head proportions and color ramps were subtly
-refined. The new real-game CI screenshot artifact is
-`stage3-adventure-cabin.png`. Desktop and real-device visual sign-off are
-still required for a fully polished adventure-art look.
+Reference visual commit: `8b08f5570ed5` (before directional sprite work).
+Production-quality art is deferred until a new direction is approved.

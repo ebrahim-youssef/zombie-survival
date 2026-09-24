@@ -99,70 +99,10 @@ Core SFX:
 
 Use original/generated/permissively licensed audio only.
 
-## Superseded first angled sprite prototype (48×64)
+## Current override — placeholder rollback
 
-- Characters use distinct front, three-quarter, side and back sprites.
-- Full-body 48×64 silhouettes with oversized helmets/heads, jacket/torso,
-  independent moving legs and boots, animated arms and equipment.
-- Per-facing player idle/walk/fire/melee/reload/hurt/death visual states.
-- Per-facing zombie idle/walk/attack/hurt/death visual states.
-- Circle colliders remain centered at the feet independent of visual height.
-- No whole-body sprite rotation: the art changes with the facing instead.
-- The procedural frames are original gameplay art. Final artist-authored
-  production sprite sheets are still a separate art acceptance task.
-
-## Approved visual reference — original chunky arcade cabin
-
-The user-approved screenshot is the visual direction for this game.
-Match its priorities: warm golden lantern-lit wooden cabin; deep-blue
-night outside; readable broken window entrances; compact full-body
-cartoon survivor and zombies; prominent golden mystery chest; weapon
-wall-buy signs; clutter, shelf, rug and tasteful pixel debris; high-
-contrast pixel portrait/hearts/score/round/ammo HUD.
-
-Implementation:
-- All character source frames are **exactly 32 × 32** and display at
-  3× nearest-neighbour scale; no 48 × 64 source sprites remain.
-- Original eight-facing survivor (helmet, tan face, dark rifle, olive
-  outfit) and cartoon green-faced zombies (large head, white torn
-  shirt, blue trousers, glowing eyes and dark-red mouths).
-- Original 32px frame families for idle/walk/combat/hurt/death.
-- Feet-aligned circular hitboxes remain independent of tall sprites.
-- Four original procedural asset palettes/props are generated once
-  per game session; no copyrighted commercial sprite sheets.
-- Warm plank floor with distinct seams/nails; timber wall faces,
-  illustrated boarded broken windows and moonlit silhouettes.
-- Props: barrel, lantern, rug, shelf/books/potted plant, wooden
-  crates, hand-marked poster and glowing mystery chest.
-- Screen-space HUD adapts for small touch viewports so joysticks
-  never share the lower corners with ammo/HP panels.
-
-The visual reference contains more hand-authored texture detail and
-lighting than this first original implementation. Compare in a
-real browser and iterate on production art only after accepting the
-playable composition; do not claim pixel-identical replication.
-
-## Approved character-only refinement (supersedes old 32px chunky character raster)
-
-User approved the cabin and HUD but found the player and zombies excessively
-blocky relative to the approved reference screenshot. Retain the 32×32 **design
-grid**, but supersample each direction/action into **64×64 original raster art**
-through Canvas2D and display at **1.5×** (unchanged 96×96 onscreen size).
-Heads have irregular rounded contours, graded shading, individual ears and
-cheeks; helmets, hair, torn clothing, joints and weapons are layered and use
-subtle antialiasing. Small highlight clusters keep an arcade pixel-art feel.
-No commercial sprites are reused. All existing 8 facings/action keys persist.
-Do not alter background, furniture or HUD visual direction in this pass.
-
-## Stage 3 wide three-quarter adventure direction (current)
-
-The Age-of-Zombies chunky overhead treatment is superseded as a goal:
-prefer classic Zelda-like three-quarter readability (faces/torso/feet),
-a wide low-taper navigable cabin, natural wood and moss material ramps,
-subtle top-left highlights and cold night beyond the windows.
-The original artwork is not copied from Nintendo or Halfbrick.
-
-Structural guarantee: rug, flat paper, floor debris and light pools are
-always lower depth than every standing player/zombie. Display layers and
-world geometry are immutable game constraints, not visual guesses.
-Artwork iteration remains possible after browser screenshots are reviewed.
+All later generated character/environment/HUD art experiments are
+superseded. Runtime is intentionally restored to the original simple
+pseudo-isometric diamond floor and rotating 32×32 player/zombie placeholders.
+This document's production-art targets remain future requirements only;
+they are **not** an instruction to regenerate art without approval.
