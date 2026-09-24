@@ -1,4 +1,3 @@
-import Phaser from "phaser";
 import {
   getMaxAliveZombies,
   getSpawnIntervalMs,
@@ -118,7 +117,7 @@ export class WaveController {
       if (filtered.length > 0) candidates = filtered;
     }
 
-    const index = Phaser.Math.Between(0, candidates.length - 1);
+    const index = Math.floor(Math.random() * candidates.length);
     const selected = candidates[index];
     if (!selected) throw new Error("Failed to select a zombie spawn window.");
 
