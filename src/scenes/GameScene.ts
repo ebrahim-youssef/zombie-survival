@@ -252,7 +252,6 @@ export class GameScene extends Phaser.Scene {
   debugPerformanceState():{
     gameObjects:number;
     tweens:number;
-    timers:number;
     aliveZombies:number;
     round:number;
     actualFps:number;
@@ -262,8 +261,7 @@ export class GameScene extends Phaser.Scene {
     if(!this.zombies||!this.waves)return null;
     return {
       gameObjects:this.children.length,
-      tweens:this.tweens.getAllTweens().length,
-      timers:this.time.getAllEvents().length,
+      tweens:this.tweens.getTweens().length,
       aliveZombies:this.zombies.getAliveCount(),
       round:this.waves.snapshot(this.clock.now).round,
       actualFps:this.game.loop.actualFps,

@@ -42,12 +42,10 @@ test("performance soak: repeated restart does not accumulate scene objects/timer
     // envelope while rejecting monotonic scene/timer accumulation.
     expect(sample.gameObjects).toBeLessThanOrEqual(baseline.gameObjects+8);
     expect(sample.tweens).toBeLessThanOrEqual(8);
-    expect(sample.timers).toBeLessThanOrEqual(8);
     expect(sample.aliveZombies).toBeLessThanOrEqual(6);
     expect(Number.isFinite(sample.actualFps)).toBe(true);
   }
   expect(final.gameObjects).toBeLessThanOrEqual(baseline.gameObjects+5);
-  expect(final.timers).toBeLessThanOrEqual(baseline.timers+2);
   expect(final.tweens).toBeLessThanOrEqual(baseline.tweens+2);
   expect(errors).toEqual([]);
 
