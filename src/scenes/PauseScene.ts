@@ -15,7 +15,6 @@ export class PauseScene extends Phaser.Scene{
       this.input.keyboard?.off("keydown-ESC",this.escape,this);
       this.scale.off(Phaser.Scale.Events.RESIZE,this.onResize,this);
       this.settingsPanel?.destroy();this.settingsPanel=undefined;
-    this.controlsPanel?.destroy();this.controlsPanel=undefined;
       this.controlsPanel?.destroy();this.controlsPanel=undefined;
     });
   }
@@ -72,6 +71,7 @@ export class PauseScene extends Phaser.Scene{
   debugControlsVisible():boolean{return !!this.controlsPanel;}
   private resumeGame():void{
     this.settingsPanel?.destroy();this.settingsPanel=undefined;
+    this.controlsPanel?.destroy();this.controlsPanel=undefined;
     this.scene.stop();
     this.scene.resume("game");
   }
