@@ -249,6 +249,19 @@ export class GameScene extends Phaser.Scene {
     return {killed:zombie.isDead,pointsGained:this.runState.points-before};
   }
 
+  debugTimingState():{
+    now:number;
+    weapon:ReturnType<import("../weapons/WeaponController").WeaponController["snapshot"]>;
+    wave:ReturnType<WaveController["snapshot"]>;
+  }|null{
+    if(!this.combat||!this.waves)return null;
+    return {
+      now:this.clock.now,
+      weapon:this.combat.inventory.activeWeapon.snapshot(),
+      wave:this.waves.snapshot(this.clock.now),
+    };
+  }
+
   debugAmmo():number{
     return this.combat?.inventory.activeWeapon.snapshot().magazineAmmo??-1;
   }

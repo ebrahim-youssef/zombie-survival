@@ -181,3 +181,47 @@ test("desktop: pause menu exposes a working Controls panel",async({browser})=>{
   expect(errors).toEqual([]);
   await context.close();
 });
+
+
+test("hardening: pause freezes reload and wave/gameplay time",async({browser})=>{
+  test.setTimeout(30_000);
+  const context=await browser.newContext({viewport:{width:1280,height:720}});
+  const page=await context.newPage();
+  const errors=[];
+  page.on("pageerror",error=>errors.push(error.message));
+  await page.goto("/?smoke=1");
+  await page.waitForFunction(()=>window.__zombieSmoke?.isActive("menu"));
+  await page.mouse.click(640,360);
+  await page.waitForFunction(()=>window.__zombieSmoke?.isActive("game"));
+
+  // Fire one real MR6 shot and start a real loaded reload.
+  await page.mouse.move(900,360);
+  await page.mouse.down({button:"left"});
+  await page.mouse.up({button:"left"});
+  await page.waitForFunction(()=>window.__zombieSmoke?.ammo()===7);
+  await page.keyboard.press("KeyR");
+  await page.waitForFunction(()=>window.__zombieSmoke?.timingState()?.weapon.isReloading);
+
+  const before=await page.evaluate(()=>window.__zombieSmoke.timingState());
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(()=>window.__zombieSmoke?.isActive("pause"));
+  await page.waitForTimeout(650);
+  const paused=await page.evaluate(()=>window.__zombieSmoke.timingState());
+
+  expect(paused.now).toBe(before.now);
+  expect(paused.weapon).toEqual(before.weapon);
+  expect(paused.wave).toEqual(before.wave);
+
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(()=>!window.__zombieSmoke?.isActive("pause"));
+  await page.waitForFunction(
+    ()=>window.__zombieSmoke?.timingState()?.weapon.isReloading===false,
+    {timeout:5000},
+  );
+  const after=await page.evaluate(()=>window.__zombieSmoke.timingState());
+  expect(after.now).toBeGreaterThan(before.now);
+  expect(after.weapon.magazineAmmo).toBe(8);
+  expect(after.weapon.reserveAmmo).toBe(31);
+  expect(errors).toEqual([]);
+  await context.close();
+});
