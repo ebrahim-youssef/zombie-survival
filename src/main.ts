@@ -29,6 +29,13 @@ if(import.meta.env.DEV && new URLSearchParams(location.search).has("smoke")){
       debugState:()=> (game.scene.getScene("game") as GameScene).debugShortcutsState(),
       alignedShot:()=> (game.scene.getScene("game") as GameScene).debugFireAtAlignedTarget(),
       alignedMelee:()=> (game.scene.getScene("game") as GameScene).debugMeleeAtAlignedTarget(),
+      interactionState:()=> (game.scene.getScene("game") as GameScene).debugInteractionState(),
+      moveToInteraction:(target:"mr6"|"kuda"|"box")=>
+        (game.scene.getScene("game") as GameScene).debugMoveToInteraction(target),
+      addPoints:(amount:number)=>
+        (game.scene.getScene("game") as GameScene).debugAddPoints(amount),
+      advanceInteraction:(ms:number)=>
+        (game.scene.getScene("game") as GameScene).debugAdvanceInteraction(ms),
       timingState:()=> (game.scene.getScene("game") as GameScene).debugTimingState(),
       ammo:():number=>
         (game.scene.getScene("game") as GameScene).debugAmmo(),

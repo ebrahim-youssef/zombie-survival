@@ -249,6 +249,59 @@ export class GameScene extends Phaser.Scene {
     return {killed:zombie.isDead,pointsGained:this.runState.points-before};
   }
 
+  debugInteractionState():{
+    points:number;
+    prompt:string|null;
+    status:string|null;
+    inventory:ReturnType<import("../weapons/InventoryController").InventoryController["snapshot"]>;
+    active:ReturnType<import("../weapons/WeaponController").WeaponController["snapshot"]>;
+  }|null{
+    if(!this.runState||!this.interactions||!this.combat)return null;
+    const snap=this.interactions.snapshot();
+    return {
+      points:this.runState.points,
+      prompt:snap.prompt,
+      status:snap.status,
+      inventory:this.combat.inventory.snapshot(),
+      active:this.combat.inventory.activeWeapon.snapshot(),
+    };
+  }
+
+  debugMoveToInteraction(
+    target:"mr6"|"kuda"|"box",
+  ):boolean{
+    if(!import.meta.env.DEV||!this.player||!this.arena)return false;
+    const point=target==="mr6"
+      ?this.arena.interactions.mr6WallBuy
+      :target==="kuda"
+        ?this.arena.interactions.kudaWallBuy
+        :this.arena.interactions.mysteryBox;
+    this.player.setPosition(point.x,point.y);
+    const body=this.player.body;
+    if(body instanceof Phaser.Physics.Arcade.Body){
+      body.reset(point.x,point.y);
+      body.updateFromGameObject();
+    }
+    return true;
+  }
+
+  debugAddPoints(amount:number):number{
+    if(!import.meta.env.DEV||!this.runState||!Number.isFinite(amount))return -1;
+    this.runState.points=Math.max(0,Math.floor(this.runState.points+amount));
+    return this.runState.points;
+  }
+
+  debugAdvanceInteraction(ms:number):void{
+    if(!import.meta.env.DEV||!this.interactions||!(ms>=0))return;
+    this.interactions.update({
+      move:new Phaser.Math.Vector2(),
+      aimWorld:new Phaser.Math.Vector2(),
+      fireHeld:false,firePressed:false,meleePressed:false,
+      reloadPressed:false,interactPressed:false,slotPressed:0,
+      cycleWeapon:0,pausePressed:false,
+    },this.clock.now+ms);
+  }
+
   debugTimingState():{
     now:number;
     weapon:ReturnType<import("../weapons/WeaponController").WeaponController["snapshot"]>;
